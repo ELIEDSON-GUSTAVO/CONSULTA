@@ -426,10 +426,9 @@ export default function Relatorios() {
                     <XAxis 
                       dataKey="nameShort" 
                       className="text-xs" 
-                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
-                      angle={-25}
-                      textAnchor="end"
-                      height={80}
+                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                      angle={0}
+                      height={60}
                       interval={0}
                     />
                     <YAxis className="text-xs" tick={{ fill: "hsl(var(--muted-foreground))" }} />

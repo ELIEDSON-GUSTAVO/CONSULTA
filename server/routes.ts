@@ -1,9 +1,100 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertConsultaSchema, updateConsultaSchema, insertSolicitacaoSchema, updateSolicitacaoSchema } from "@shared/schema";
+import { insertConsultaSchema, updateConsultaSchema, insertSolicitacaoSchema, updateSolicitacaoSchema, insertPacienteSchema, updatePacienteSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // GET all pacientes
+  app.get("/api/pacientes", async (req, res) => {
+    try {
+      const { search } = req.query;
+      let pacientes;
+      
+      if (search && typeof search === "string") {
+        pacientes = await storage.searchPacientes(search);
+      } else {
+        pacientes = await storage.getPacientes();
+      }
+      
+      res.json(pacientes);
+    } catch (error) {
+      console.error("Error fetching pacientes:", error);
+      res.status(500).json({ error: "Failed to fetch pacientes" });
+    }
+  });
+
+  // GET single paciente by id
+  app.get("/api/pacientes/:id", async (req, res) => {
+    try {
+      const paciente = await storage.getPaciente(req.params.id);
+      if (!paciente) {
+        return res.status(404).json({ error: "Paciente not found" });
+      }
+      res.json(paciente);
+    } catch (error) {
+      console.error("Error fetching paciente:", error);
+      res.status(500).json({ error: "Failed to fetch paciente" });
+    }
+  });
+
+  // GET consultas by paciente
+  app.get("/api/pacientes/:id/consultas", async (req, res) => {
+    try {
+      const consultas = await storage.getConsultasByPaciente(req.params.id);
+      res.json(consultas);
+    } catch (error) {
+      console.error("Error fetching consultas:", error);
+      res.status(500).json({ error: "Failed to fetch consultas" });
+    }
+  });
+
+  // POST create new paciente
+  app.post("/api/pacientes", async (req, res) => {
+    try {
+      const validated = insertPacienteSchema.parse(req.body);
+      const paciente = await storage.createPaciente(validated);
+      res.status(201).json(paciente);
+    } catch (error) {
+      console.error("Error creating paciente:", error);
+      if (error instanceof Error && error.name === "ZodError") {
+        return res.status(400).json({ error: "Invalid data", details: error });
+      }
+      res.status(500).json({ error: "Failed to create paciente" });
+    }
+  });
+
+  // PATCH update paciente
+  app.patch("/api/pacientes/:id", async (req, res) => {
+    try {
+      const validated = updatePacienteSchema.parse(req.body);
+      const paciente = await storage.updatePaciente(req.params.id, validated);
+      if (!paciente) {
+        return res.status(404).json({ error: "Paciente not found" });
+      }
+      res.json(paciente);
+    } catch (error) {
+      console.error("Error updating paciente:", error);
+      if (error instanceof Error && error.name === "ZodError") {
+        return res.status(400).json({ error: "Invalid data", details: error });
+      }
+      res.status(500).json({ error: "Failed to update paciente" });
+    }
+  });
+
+  // DELETE paciente
+  app.delete("/api/pacientes/:id", async (req, res) => {
+    try {
+      const success = await storage.deletePaciente(req.params.id);
+      if (!success) {
+        return res.status(404).json({ error: "Paciente not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting paciente:", error);
+      res.status(500).json({ error: "Failed to delete paciente" });
+    }
+  });
+
   // GET all consultas
   app.get("/api/consultas", async (req, res) => {
     try {

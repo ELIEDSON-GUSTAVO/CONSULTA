@@ -1,4 +1,4 @@
-import { Home, Plus, History, BarChart3, UserPlus, ClipboardCheck } from "lucide-react";
+import { Home, Plus, History, BarChart3, UserPlus, ClipboardCheck, Users } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import {
   Sidebar,
@@ -18,6 +18,11 @@ const psicologaMenuItems = [
     title: "Dashboard",
     url: "/",
     icon: Home,
+  },
+  {
+    title: "Pacientes",
+    url: "/pacientes",
+    icon: Users,
   },
   {
     title: "Gerenciar Solicitações",

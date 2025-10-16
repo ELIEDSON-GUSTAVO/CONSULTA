@@ -1,11 +1,23 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, date, time } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, date, time, serial } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+export const pacientes = pgTable("pacientes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  codigoProntuario: text("codigo_prontuario").notNull().unique(),
+  nome: text("nome").notNull(),
+  genero: text("genero"),
+  telefone: text("telefone"),
+  email: text("email"),
+  setor: text("setor"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const consultas = pgTable("consultas", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  paciente: text("paciente").notNull(),
+  pacienteId: varchar("paciente_id"),
+  paciente: text("paciente"),
   genero: text("genero"),
   setor: text("setor"),
   data: date("data").notNull(),
@@ -35,13 +47,32 @@ export const solicitacoes = pgTable("solicitacoes", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const insertPacienteSchema = createInsertSchema(pacientes).omit({
+  id: true,
+  createdAt: true,
+  codigoProntuario: true,
+}).extend({
+  nome: z.string().min(1, "Nome do paciente é obrigatório"),
+  genero: z.enum(["masculino", "feminino", "outro"]).optional(),
+  telefone: z.string().optional(),
+  email: z.string().email("Email inválido").optional().or(z.literal("")),
+  setor: z.string().optional(),
+});
+
+export const updatePacienteSchema = insertPacienteSchema.partial();
+
+export type InsertPaciente = z.infer<typeof insertPacienteSchema>;
+export type UpdatePaciente = z.infer<typeof updatePacienteSchema>;
+export type Paciente = typeof pacientes.$inferSelect;
+
 export const insertConsultaSchema = createInsertSchema(consultas).omit({
   id: true,
   createdAt: true,
+  paciente: true,
+  genero: true,
+  setor: true,
 }).extend({
-  paciente: z.string().min(1, "Nome do paciente é obrigatório"),
-  genero: z.enum(["masculino", "feminino", "outro"]).optional(),
-  setor: z.string().optional(),
+  pacienteId: z.string().min(1, "Paciente é obrigatório"),
   data: z.string().min(1, "Data é obrigatória"),
   horario: z.string().min(1, "Horário é obrigatório"),
   status: z.enum(["agendada", "realizada", "cancelada"]).default("agendada"),

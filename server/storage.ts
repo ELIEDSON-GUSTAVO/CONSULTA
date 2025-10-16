@@ -1,11 +1,20 @@
 // Reference: javascript_database blueprint
-import { consultas, solicitacoes, type Consulta, type InsertConsulta, type UpdateConsulta, type Solicitacao, type InsertSolicitacao, type UpdateSolicitacao } from "@shared/schema";
+import { consultas, solicitacoes, pacientes, type Consulta, type InsertConsulta, type UpdateConsulta, type Solicitacao, type InsertSolicitacao, type UpdateSolicitacao, type Paciente, type InsertPaciente, type UpdatePaciente } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql, like } from "drizzle-orm";
 
 export interface IStorage {
+  getPacientes(): Promise<Paciente[]>;
+  getPaciente(id: string): Promise<Paciente | undefined>;
+  getPacienteByCodigo(codigo: string): Promise<Paciente | undefined>;
+  searchPacientes(query: string): Promise<Paciente[]>;
+  createPaciente(paciente: InsertPaciente): Promise<Paciente>;
+  updatePaciente(id: string, paciente: UpdatePaciente): Promise<Paciente | undefined>;
+  deletePaciente(id: string): Promise<boolean>;
+  
   getConsultas(): Promise<Consulta[]>;
   getConsulta(id: string): Promise<Consulta | undefined>;
+  getConsultasByPaciente(pacienteId: string): Promise<Consulta[]>;
   createConsulta(consulta: InsertConsulta): Promise<Consulta>;
   updateConsulta(id: string, consulta: UpdateConsulta): Promise<Consulta | undefined>;
   deleteConsulta(id: string): Promise<boolean>;
@@ -18,8 +27,98 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  private async generateCodigoProntuario(): Promise<string> {
+    const allPacientes = await db.select().from(pacientes).orderBy(desc(pacientes.createdAt));
+    
+    if (allPacientes.length === 0) {
+      return "P-00001";
+    }
+    
+    const lastCodigo = allPacientes[0].codigoProntuario;
+    const numeroMatch = lastCodigo.match(/P-(\d+)/);
+    
+    if (numeroMatch) {
+      const numero = parseInt(numeroMatch[1]) + 1;
+      return `P-${String(numero).padStart(5, '0')}`;
+    }
+    
+    return "P-00001";
+  }
+
+  async getPacientes(): Promise<Paciente[]> {
+    return await db.select().from(pacientes).orderBy(desc(pacientes.createdAt));
+  }
+
+  async getPaciente(id: string): Promise<Paciente | undefined> {
+    try {
+      const [paciente] = await db.select().from(pacientes).where(eq(pacientes.id, id));
+      return paciente || undefined;
+    } catch (error) {
+      console.error("Error fetching paciente:", error);
+      return undefined;
+    }
+  }
+
+  async getPacienteByCodigo(codigo: string): Promise<Paciente | undefined> {
+    try {
+      const [paciente] = await db.select().from(pacientes).where(eq(pacientes.codigoProntuario, codigo));
+      return paciente || undefined;
+    } catch (error) {
+      console.error("Error fetching paciente by codigo:", error);
+      return undefined;
+    }
+  }
+
+  async searchPacientes(query: string): Promise<Paciente[]> {
+    try {
+      return await db.select().from(pacientes).where(
+        sql`${pacientes.nome} ILIKE ${`%${query}%`} OR ${pacientes.codigoProntuario} ILIKE ${`%${query}%`}`
+      ).orderBy(desc(pacientes.createdAt));
+    } catch (error) {
+      console.error("Error searching pacientes:", error);
+      return [];
+    }
+  }
+
+  async createPaciente(insertPaciente: InsertPaciente): Promise<Paciente> {
+    const codigoProntuario = await this.generateCodigoProntuario();
+    const [paciente] = await db
+      .insert(pacientes)
+      .values({ ...insertPaciente, codigoProntuario })
+      .returning();
+    return paciente;
+  }
+
+  async updatePaciente(id: string, updatePaciente: UpdatePaciente): Promise<Paciente | undefined> {
+    try {
+      const [paciente] = await db
+        .update(pacientes)
+        .set(updatePaciente)
+        .where(eq(pacientes.id, id))
+        .returning();
+      return paciente || undefined;
+    } catch (error) {
+      console.error("Error updating paciente:", error);
+      return undefined;
+    }
+  }
+
+  async deletePaciente(id: string): Promise<boolean> {
+    try {
+      const result = await db.delete(pacientes).where(eq(pacientes.id, id));
+      return result.rowCount !== null && result.rowCount > 0;
+    } catch (error) {
+      console.error("Error deleting paciente:", error);
+      return false;
+    }
+  }
+
   async getConsultas(): Promise<Consulta[]> {
     return await db.select().from(consultas).orderBy(desc(consultas.createdAt));
+  }
+
+  async getConsultasByPaciente(pacienteId: string): Promise<Consulta[]> {
+    return await db.select().from(consultas).where(eq(consultas.pacienteId, pacienteId)).orderBy(desc(consultas.createdAt));
   }
 
   async getConsulta(id: string): Promise<Consulta | undefined> {

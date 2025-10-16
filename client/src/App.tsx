@@ -18,6 +18,8 @@ import Historico from "@/pages/historico";
 import Relatorios from "@/pages/relatorios";
 import SolicitarAtendimento from "@/pages/solicitar-atendimento";
 import GerenciarSolicitacoes from "@/pages/gerenciar-solicitacoes";
+import Pacientes from "@/pages/pacientes";
+import PerfilPaciente from "@/pages/perfil-paciente";
 import NotFound from "@/pages/not-found";
 
 type UserType = "funcionario" | "psicologa" | null;
@@ -37,6 +39,8 @@ function Router({ userType }: { userType: UserType }) {
     return (
       <Switch>
         <Route path="/" component={Dashboard} />
+        <Route path="/pacientes" component={Pacientes} />
+        <Route path="/pacientes/:id" component={PerfilPaciente} />
         <Route path="/nova-consulta" component={NovaConsulta} />
         <Route path="/editar-consulta/:id" component={EditarConsulta} />
         <Route path="/historico" component={Historico} />
