@@ -1,4 +1,4 @@
-import { Home, Plus, History, BarChart3, UserPlus, ClipboardCheck, Users } from "lucide-react";
+import { Home, Plus, History, BarChart3, UserPlus, ClipboardCheck, Users, Search } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import {
   Sidebar,
@@ -51,6 +51,11 @@ const funcionarioMenuItems = [
     title: "Solicitar Atendimento",
     url: "/solicitar-atendimento",
     icon: UserPlus,
+  },
+  {
+    title: "Acompanhar Solicitação",
+    url: "/acompanhar-solicitacao",
+    icon: Search,
   },
 ];
 

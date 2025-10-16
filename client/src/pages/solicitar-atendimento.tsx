@@ -22,13 +22,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { insertSolicitacaoSchema, type InsertSolicitacao } from "@shared/schema";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { insertSolicitacaoSchema, type InsertSolicitacao, type Solicitacao } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Send } from "lucide-react";
+import { Send, Copy, Check } from "lucide-react";
+import { useState } from "react";
 
 export default function SolicitarAtendimento() {
   const { toast } = useToast();
+  const [codigoRastreamento, setCodigoRastreamento] = useState<string | null>(null);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const form = useForm<InsertSolicitacao>({
     resolver: zodResolver(insertSolicitacaoSchema),
@@ -48,14 +59,13 @@ export default function SolicitarAtendimento() {
 
   const createMutation = useMutation({
     mutationFn: async (data: InsertSolicitacao) => {
-      await apiRequest("POST", "/api/solicitacoes", data);
+      const solicitacao = await apiRequest("POST", "/api/solicitacoes", data) as unknown as Solicitacao;
+      return solicitacao;
     },
-    onSuccess: async () => {
+    onSuccess: async (solicitacao) => {
       await queryClient.invalidateQueries({ queryKey: ["/api/solicitacoes"] });
-      toast({
-        title: "Solicitação enviada!",
-        description: "Sua solicitação foi enviada para análise da psicóloga.",
-      });
+      setCodigoRastreamento(solicitacao.codigoRastreamento);
+      setShowSuccessDialog(true);
       form.reset();
     },
     onError: () => {
@@ -66,6 +76,18 @@ export default function SolicitarAtendimento() {
       });
     },
   });
+
+  const handleCopyCodigo = () => {
+    if (codigoRastreamento) {
+      navigator.clipboard.writeText(codigoRastreamento);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      toast({
+        title: "Código copiado!",
+        description: "O código de rastreamento foi copiado para a área de transferência.",
+      });
+    }
+  };
 
   const onSubmit = (data: InsertSolicitacao) => {
     createMutation.mutate(data);
@@ -324,6 +346,47 @@ export default function SolicitarAtendimento() {
           </Form>
         </CardContent>
       </Card>
+
+      <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Solicitação enviada com sucesso!</DialogTitle>
+            <DialogDescription>
+              Sua solicitação foi enviada para análise da psicóloga. Use o código abaixo para acompanhar o status da sua solicitação.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="bg-muted p-4 rounded-lg">
+              <p className="text-sm text-muted-foreground mb-2">Código de rastreamento:</p>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 text-2xl font-mono font-semibold tracking-wider" data-testid="text-codigo-rastreamento">
+                  {codigoRastreamento}
+                </code>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleCopyCodigo}
+                  data-testid="button-copiar-codigo"
+                >
+                  {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
+            <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 p-4 rounded-lg">
+              <p className="text-sm text-blue-900 dark:text-blue-100">
+                <strong>Importante:</strong> Guarde este código! Você pode usar a página de "Acompanhar Solicitação" para verificar o status a qualquer momento.
+              </p>
+            </div>
+            <Button
+              onClick={() => setShowSuccessDialog(false)}
+              className="w-full"
+              data-testid="button-fechar-dialog"
+            >
+              Entendi
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
