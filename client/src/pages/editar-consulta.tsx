@@ -67,6 +67,21 @@ export default function EditarConsulta() {
     }
   }, [consulta, form]);
 
+  useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      if (name === "compareceu") {
+        if (value.compareceu === "sim") {
+          form.setValue("status", "realizada");
+        } else if (value.compareceu === "nao") {
+          form.setValue("status", "cancelada");
+        } else if (value.compareceu === "pendente") {
+          form.setValue("status", "agendada");
+        }
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form]);
+
   const updateMutation = useMutation({
     mutationFn: async (data: InsertConsulta) => {
       await apiRequest("PATCH", `/api/consultas/${id}`, data);
