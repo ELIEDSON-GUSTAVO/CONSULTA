@@ -197,3 +197,10 @@ pacientes table:
 - Query-based status lookup with loading states and error handling
 - Color-coded status badges (yellow/green/red) for visual clarity
 - Responsive design with shadcn Tabs component for seamless mobile experience
+
+### Critical Bug Fixes (October 2025)
+- **Null Gender Validation Fix**: Resolved white screen error in psychologist interface when approving requests
+  - Issue: Zod schema with `.optional()` expects `undefined` but database can return `null` for optional gender field
+  - Fix: Added null-to-undefined conversion in `gerenciar-solicitacoes.tsx` when creating consultations (lines 81-84)
+  - Ensures consistent handling: null values from database are converted to undefined before API submission
+  - Same pattern now applied to both patient creation and consultation creation for consistency
