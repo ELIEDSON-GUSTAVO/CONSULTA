@@ -45,7 +45,7 @@ export default function Relatorios() {
   }, {} as Record<string, number>);
 
   const porSetor = consultas.reduce((acc, c) => {
-    const setor = c.setor || "Não Informado";
+    const setor = c.setor || "Não informado";
     if (!acc[setor]) {
       acc[setor] = {
         total: 0,
