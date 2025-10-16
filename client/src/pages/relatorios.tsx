@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { type Consulta } from "@shared/schema";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
-import { Calendar, Users, CheckCircle, XCircle, Clock } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend, Area, AreaChart, ComposedChart } from "recharts";
+import { Calendar, Users, CheckCircle, XCircle, Clock, TrendingUp, TrendingDown } from "lucide-react";
 
 export default function Relatorios() {
   const { data: consultas = [], isLoading } = useQuery<Consulta[]>({
@@ -47,9 +47,23 @@ export default function Relatorios() {
   const evolucaoMensal = consultas.reduce((acc, c) => {
     const date = new Date(c.data + "T00:00:00");
     const mesAno = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-    acc[mesAno] = (acc[mesAno] || 0) + 1;
+    
+    if (!acc[mesAno]) {
+      acc[mesAno] = { total: 0, agendadas: 0, realizadas: 0, canceladas: 0, masculino: 0, feminino: 0, outro: 0 };
+    }
+    
+    acc[mesAno].total += 1;
+    
+    if (c.status === "agendada") acc[mesAno].agendadas += 1;
+    if (c.status === "realizada") acc[mesAno].realizadas += 1;
+    if (c.status === "cancelada") acc[mesAno].canceladas += 1;
+    
+    if (c.genero === "masculino") acc[mesAno].masculino += 1;
+    if (c.genero === "feminino") acc[mesAno].feminino += 1;
+    if (c.genero === "outro") acc[mesAno].outro += 1;
+    
     return acc;
-  }, {} as Record<string, number>);
+  }, {} as Record<string, { total: number; agendadas: number; realizadas: number; canceladas: number; masculino: number; feminino: number; outro: number }>);
 
   const periodoData = Object.entries(porPeriodo).map(([name, value]) => ({
     name,
@@ -75,14 +89,38 @@ export default function Relatorios() {
       const mesNome = new Date(parseInt(ano), parseInt(mes) - 1).toLocaleDateString("pt-BR", { 
         month: "short", 
         year: "numeric" 
-      });
+      }).replace(/\./g, '');
       return {
-        mes: mesNome,
-        consultas: value,
+        mes: mesNome.charAt(0).toUpperCase() + mesNome.slice(1),
+        total: value.total,
+        agendadas: value.agendadas,
+        realizadas: value.realizadas,
+        canceladas: value.canceladas,
+        masculino: value.masculino,
+        feminino: value.feminino,
+        outro: value.outro,
         sortKey: mesAno,
       };
     })
     .sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+  
+  const calcularTendencia = () => {
+    if (evolucaoData.length < 2) return { tipo: "neutro", percentual: 0 };
+    
+    const ultimoMes = evolucaoData[evolucaoData.length - 1].total;
+    const penultimoMes = evolucaoData[evolucaoData.length - 2].total;
+    
+    if (penultimoMes === 0) return { tipo: "neutro", percentual: 0 };
+    
+    const variacao = ((ultimoMes - penultimoMes) / penultimoMes) * 100;
+    
+    return {
+      tipo: variacao > 0 ? "alta" : variacao < 0 ? "baixa" : "neutro",
+      percentual: Math.abs(variacao).toFixed(1)
+    };
+  };
+  
+  const tendencia = calcularTendencia();
 
   if (isLoading) {
     return (
@@ -240,28 +278,242 @@ export default function Relatorios() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-xl font-semibold">Evolução Mensal de Consultas</CardTitle>
+          <div className="flex items-start justify-between">
+            <div className="space-y-1">
+              <CardTitle className="text-xl font-semibold">Evolução Mensal de Consultas</CardTitle>
+              <CardDescription>Acompanhamento detalhado por status ao longo dos meses</CardDescription>
+            </div>
+            {evolucaoData.length >= 2 && (
+              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${
+                tendencia.tipo === "alta" 
+                  ? "bg-chart-2/10 text-chart-2" 
+                  : tendencia.tipo === "baixa" 
+                  ? "bg-destructive/10 text-destructive"
+                  : "bg-muted text-muted-foreground"
+              }`}>
+                {tendencia.tipo === "alta" ? (
+                  <TrendingUp className="h-4 w-4" />
+                ) : tendencia.tipo === "baixa" ? (
+                  <TrendingDown className="h-4 w-4" />
+                ) : (
+                  <Clock className="h-4 w-4" />
+                )}
+                <span className="text-sm font-semibold">
+                  {tendencia.tipo === "neutro" ? "Estável" : `${tendencia.percentual}%`}
+                </span>
+              </div>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {evolucaoData.length > 0 ? (
+            <>
+              <ResponsiveContainer width="100%" height={400}>
+                <ComposedChart data={evolucaoData}>
+                  <defs>
+                    <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="colorRealizadas" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--chart-2))" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="hsl(var(--chart-2))" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" opacity={0.3} />
+                  <XAxis 
+                    dataKey="mes" 
+                    className="text-xs" 
+                    tick={{ fill: "hsl(var(--muted-foreground))" }}
+                  />
+                  <YAxis 
+                    className="text-xs" 
+                    tick={{ fill: "hsl(var(--muted-foreground))" }}
+                  />
+                  <Tooltip
+                    contentStyle={{ 
+                      backgroundColor: "hsl(var(--card))", 
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
+                      padding: "12px"
+                    }}
+                    labelStyle={{ 
+                      color: "hsl(var(--foreground))",
+                      fontWeight: "600",
+                      marginBottom: "8px"
+                    }}
+                    itemStyle={{ padding: "4px 0" }}
+                  />
+                  <Legend 
+                    wrapperStyle={{ paddingTop: "20px" }}
+                    iconType="circle"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="total"
+                    stroke="hsl(var(--primary))"
+                    strokeWidth={3}
+                    fill="url(#colorTotal)"
+                    name="Total"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="realizadas"
+                    stroke="hsl(var(--chart-2))"
+                    strokeWidth={2.5}
+                    dot={{ fill: "hsl(var(--chart-2))", r: 5 }}
+                    activeDot={{ r: 7 }}
+                    name="Realizadas"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="agendadas"
+                    stroke="hsl(var(--chart-3))"
+                    strokeWidth={2.5}
+                    dot={{ fill: "hsl(var(--chart-3))", r: 5 }}
+                    activeDot={{ r: 7 }}
+                    name="Agendadas"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="canceladas"
+                    stroke="hsl(var(--destructive))"
+                    strokeWidth={2}
+                    dot={{ fill: "hsl(var(--destructive))", r: 4 }}
+                    activeDot={{ r: 6 }}
+                    strokeDasharray="5 5"
+                    name="Canceladas"
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
+              
+              <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4 border-t pt-6">
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Média Mensal</p>
+                  <p className="text-2xl font-bold">
+                    {evolucaoData.length > 0 
+                      ? Math.round(evolucaoData.reduce((acc, m) => acc + m.total, 0) / evolucaoData.length)
+                      : 0}
+                  </p>
+                  <p className="text-xs text-muted-foreground">consultas/mês</p>
+                </div>
+                
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Melhor Mês</p>
+                  <p className="text-2xl font-bold text-chart-2">
+                    {evolucaoData.length > 0
+                      ? Math.max(...evolucaoData.map(m => m.total))
+                      : 0}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {evolucaoData.length > 0
+                      ? evolucaoData.find(m => m.total === Math.max(...evolucaoData.map(d => d.total)))?.mes
+                      : "-"}
+                  </p>
+                </div>
+                
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Taxa de Realização</p>
+                  <p className="text-2xl font-bold text-chart-2">
+                    {totalConsultas > 0
+                      ? Math.round((consultas.filter(c => c.status === "realizada").length / totalConsultas) * 100)
+                      : 0}%
+                  </p>
+                  <p className="text-xs text-muted-foreground">consultas concluídas</p>
+                </div>
+                
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Taxa de Cancelamento</p>
+                  <p className="text-2xl font-bold text-destructive">
+                    {totalConsultas > 0
+                      ? Math.round((consultas.filter(c => c.status === "cancelada").length / totalConsultas) * 100)
+                      : 0}%
+                  </p>
+                  <p className="text-xs text-muted-foreground">consultas canceladas</p>
+                </div>
+              </div>
+            </>
+          ) : (
+            <p className="text-center text-muted-foreground py-12">Sem dados disponíveis</p>
+          )}
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xl font-semibold">Distribuição por Gênero - Evolução Mensal</CardTitle>
+          <CardDescription>Análise da distribuição de gênero dos pacientes ao longo do tempo</CardDescription>
         </CardHeader>
         <CardContent>
           {evolucaoData.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={evolucaoData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis dataKey="mes" className="text-xs" />
-                <YAxis className="text-xs" />
+              <AreaChart data={evolucaoData}>
+                <defs>
+                  <linearGradient id="colorMasculino" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                  </linearGradient>
+                  <linearGradient id="colorFeminino" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#ec4899" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#ec4899" stopOpacity={0.1}/>
+                  </linearGradient>
+                  <linearGradient id="colorOutro" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.1}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" opacity={0.3} />
+                <XAxis 
+                  dataKey="mes" 
+                  className="text-xs"
+                  tick={{ fill: "hsl(var(--muted-foreground))" }}
+                />
+                <YAxis 
+                  className="text-xs"
+                  tick={{ fill: "hsl(var(--muted-foreground))" }}
+                />
                 <Tooltip
-                  contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}
-                  labelStyle={{ color: "hsl(var(--foreground))" }}
+                  contentStyle={{ 
+                    backgroundColor: "hsl(var(--card))", 
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "8px",
+                    padding: "12px"
+                  }}
+                  labelStyle={{ 
+                    color: "hsl(var(--foreground))",
+                    fontWeight: "600",
+                    marginBottom: "8px"
+                  }}
                 />
-                <Line
+                <Legend 
+                  wrapperStyle={{ paddingTop: "20px" }}
+                  iconType="circle"
+                />
+                <Area
                   type="monotone"
-                  dataKey="consultas"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={2}
-                  dot={{ fill: "hsl(var(--primary))", r: 4 }}
-                  activeDot={{ r: 6 }}
+                  dataKey="masculino"
+                  stackId="1"
+                  stroke="#3b82f6"
+                  fill="url(#colorMasculino)"
+                  name="Masculino"
                 />
-              </LineChart>
+                <Area
+                  type="monotone"
+                  dataKey="feminino"
+                  stackId="1"
+                  stroke="#ec4899"
+                  fill="url(#colorFeminino)"
+                  name="Feminino"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="outro"
+                  stackId="1"
+                  stroke="#8b5cf6"
+                  fill="url(#colorOutro)"
+                  name="Outro"
+                />
+              </AreaChart>
             </ResponsiveContainer>
           ) : (
             <p className="text-center text-muted-foreground py-12">Sem dados disponíveis</p>
