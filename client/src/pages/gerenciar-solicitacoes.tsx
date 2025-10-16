@@ -75,10 +75,11 @@ export default function GerenciarSolicitacoes() {
       });
 
       // Criar a consulta vinculada ao paciente
+      const generoConsulta = selectedSolicitacao?.genero;
       await apiRequest("POST", "/api/consultas", {
         pacienteId,
-        genero: selectedSolicitacao?.genero,
-        setor: selectedSolicitacao?.setor,
+        genero: generoConsulta === "masculino" || generoConsulta === "feminino" || generoConsulta === "outro" ? generoConsulta : undefined,
+        setor: selectedSolicitacao?.setor || undefined,
         data: data.dataConsulta,
         horario: data.horarioConsulta,
         status: "agendada",
