@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Users, Clock, Pencil, Trash2, Search, Plus } from "lucide-react";
+import { Calendar, Users, Clock, Pencil, Trash2, Search, Plus, User, UserRound } from "lucide-react";
 import { type Consulta } from "@shared/schema";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -60,6 +60,10 @@ export default function Dashboard() {
   const consultasHoje = consultas.filter((c) => c.data === today);
   const consultasAgendadas = consultas.filter((c) => c.status === "agendada");
   const pacientesUnicos = new Set(consultas.map((c) => c.paciente)).size;
+  
+  const generoMasculino = consultas.filter((c) => c.genero === "masculino").length;
+  const generoFeminino = consultas.filter((c) => c.genero === "feminino").length;
+  const generoOutro = consultas.filter((c) => c.genero === "outro").length;
 
   const getStatusBadge = (status: string) => {
     const variants = {
@@ -86,7 +90,7 @@ export default function Dashboard() {
         <p className="text-muted-foreground mt-2">Visão geral das consultas</p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
             <CardTitle className="text-lg font-medium">Consultas Hoje</CardTitle>
@@ -123,6 +127,29 @@ export default function Dashboard() {
             <p className="text-xs text-muted-foreground mt-2">
               Consultas agendadas e não realizadas
             </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+            <CardTitle className="text-lg font-medium">Por Gênero</CardTitle>
+            <UserRound className="h-5 w-5 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Masculino</span>
+                <span className="text-lg font-bold" data-testid="text-genero-masculino">{generoMasculino}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Feminino</span>
+                <span className="text-lg font-bold" data-testid="text-genero-feminino">{generoFeminino}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Outro</span>
+                <span className="text-lg font-bold" data-testid="text-genero-outro">{generoOutro}</span>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>

@@ -42,6 +42,7 @@ export default function EditarConsulta() {
     resolver: zodResolver(insertConsultaSchema),
     defaultValues: {
       paciente: "",
+      genero: undefined,
       data: "",
       horario: "",
       status: "agendada",
@@ -56,6 +57,7 @@ export default function EditarConsulta() {
     if (consulta) {
       form.reset({
         paciente: consulta.paciente,
+        genero: (consulta.genero as "masculino" | "feminino" | "outro") || undefined,
         data: consulta.data,
         horario: consulta.horario,
         status: consulta.status as "agendada" | "realizada" | "cancelada",
@@ -167,6 +169,29 @@ export default function EditarConsulta() {
                         data-testid="input-paciente"
                       />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="genero"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium">Gênero</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-genero">
+                          <SelectValue placeholder="Selecione o gênero" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="masculino">Masculino</SelectItem>
+                        <SelectItem value="feminino">Feminino</SelectItem>
+                        <SelectItem value="outro">Outro</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

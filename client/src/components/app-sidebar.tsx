@@ -11,6 +11,7 @@ import {
   SidebarMenuItem,
   SidebarHeader,
 } from "@/components/ui/sidebar";
+import nextLogoUrl from "@assets/e4e65a_fe3ebb908b914ff3b921b1c684c4eba0~mv2_1760629074249.jpg";
 
 const menuItems = [
   {
@@ -42,11 +43,13 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="border-b p-6">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <span className="text-xl font-bold">N</span>
-          </div>
+          <img 
+            src={nextLogoUrl} 
+            alt="NEXT Implementos" 
+            className="h-10 w-auto object-contain"
+          />
           <div>
-            <h1 className="text-lg font-semibold">Next</h1>
+            <h1 className="text-lg font-semibold">NEXT Implementos</h1>
             <p className="text-xs text-muted-foreground">Gestão de Consultas</p>
           </div>
         </div>

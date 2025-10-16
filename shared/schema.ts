@@ -6,6 +6,7 @@ import { z } from "zod";
 export const consultas = pgTable("consultas", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   paciente: text("paciente").notNull(),
+  genero: text("genero"),
   data: date("data").notNull(),
   horario: time("horario").notNull(),
   status: text("status").notNull().default("agendada"),
@@ -21,6 +22,7 @@ export const insertConsultaSchema = createInsertSchema(consultas).omit({
   createdAt: true,
 }).extend({
   paciente: z.string().min(1, "Nome do paciente é obrigatório"),
+  genero: z.enum(["masculino", "feminino", "outro"]).optional(),
   data: z.string().min(1, "Data é obrigatória"),
   horario: z.string().min(1, "Horário é obrigatório"),
   status: z.enum(["agendada", "realizada", "cancelada"]).default("agendada"),
