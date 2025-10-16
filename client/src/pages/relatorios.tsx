@@ -102,6 +102,7 @@ export default function Relatorios() {
 
   const setorData = Object.entries(porSetor).map(([name, value]) => ({
     name,
+    nameShort: name.length > 15 ? name.substring(0, 12) + "..." : name,
     total: value.total,
     compareceram: value.compareceram,
     naoCompareceram: value.naoCompareceram,
@@ -324,7 +325,7 @@ export default function Relatorios() {
                   </thead>
                   <tbody>
                     {setorData.map((item) => (
-                      <tr key={item.name} className="border-b hover-elevate">
+                      <tr key={item.name} className="border-b hover:bg-muted/50 transition-colors">
                         <td className="py-4 px-4 font-medium">{item.name}</td>
                         <td className="py-4 px-4 text-center">
                           <span className="inline-flex items-center justify-center rounded-full bg-primary/10 text-primary px-3 py-1 text-sm font-semibold">
@@ -364,12 +365,13 @@ export default function Relatorios() {
                   <BarChart data={setorData}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-border" opacity={0.3} />
                     <XAxis 
-                      dataKey="name" 
+                      dataKey="nameShort" 
                       className="text-xs" 
-                      tick={{ fill: "hsl(var(--muted-foreground))" }}
-                      angle={-45}
+                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                      angle={-35}
                       textAnchor="end"
-                      height={80}
+                      height={70}
+                      interval={0}
                     />
                     <YAxis className="text-xs" tick={{ fill: "hsl(var(--muted-foreground))" }} />
                     <Tooltip
@@ -380,6 +382,13 @@ export default function Relatorios() {
                         padding: "12px"
                       }}
                       labelStyle={{ color: "hsl(var(--foreground))", fontWeight: "600" }}
+                      formatter={(value, name, props) => {
+                        return [value, name];
+                      }}
+                      labelFormatter={(label) => {
+                        const item = setorData.find(d => d.nameShort === label);
+                        return item?.name || label;
+                      }}
                     />
                     <Legend wrapperStyle={{ paddingTop: "20px" }} />
                     <Bar dataKey="compareceram" fill="hsl(var(--chart-2))" name="Compareceram" radius={[8, 8, 0, 0]} />
