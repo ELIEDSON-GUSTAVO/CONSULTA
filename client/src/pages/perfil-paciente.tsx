@@ -3,12 +3,14 @@ import { useRoute, useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Calendar, Clock, FileText, Trash2, Plus } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { ArrowLeft, Calendar, Clock, FileText, Trash2, Plus, Save, UserX } from "lucide-react";
 import { type Paciente, type Consulta } from "@shared/schema";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useState, useEffect } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,6 +28,8 @@ export default function PerfilPaciente() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const pacienteId = params?.id || "";
+  const [observacoes, setObservacoes] = useState("");
+  const [isEditingObservacoes, setIsEditingObservacoes] = useState(false);
 
   const { data: paciente, isLoading: loadingPaciente } = useQuery<Paciente>({
     queryKey: [`/api/pacientes/${pacienteId}`],
@@ -35,7 +39,13 @@ export default function PerfilPaciente() {
     queryKey: [`/api/pacientes/${pacienteId}/consultas`],
   });
 
-  const deleteMutation = useMutation({
+  useEffect(() => {
+    if (paciente) {
+      setObservacoes(paciente.observacoes || "");
+    }
+  }, [paciente]);
+
+  const deleteConsultaMutation = useMutation({
     mutationFn: async (consultaId: string) => {
       await apiRequest("DELETE", `/api/consultas/${consultaId}`);
     },
@@ -51,6 +61,51 @@ export default function PerfilPaciente() {
       toast({
         title: "Erro",
         description: "Não foi possível excluir a consulta.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateObservacoesMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("PATCH", `/api/pacientes/${pacienteId}`, {
+        observacoes,
+      });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: [`/api/pacientes/${pacienteId}`] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/pacientes"] });
+      toast({
+        title: "Observações atualizadas",
+        description: "As observações do paciente foram salvas com sucesso.",
+      });
+      setIsEditingObservacoes(false);
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Não foi possível salvar as observações.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deletePacienteMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("DELETE", `/api/pacientes/${pacienteId}`);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/pacientes"] });
+      toast({
+        title: "Paciente excluído",
+        description: "O paciente foi removido do sistema.",
+      });
+      setLocation("/pacientes");
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Não foi possível excluir o paciente.",
         variant: "destructive",
       });
     },
@@ -98,26 +153,108 @@ export default function PerfilPaciente() {
       <Card>
         <CardHeader>
           <div className="flex items-start justify-between">
-            <div>
+            <div className="flex-1">
               <CardTitle className="text-2xl">{paciente.nome}</CardTitle>
               <CardDescription className="mt-2 font-mono text-lg">{paciente.codigoProntuario}</CardDescription>
             </div>
-            <FileText className="h-8 w-8 text-muted-foreground" />
+            <div className="flex gap-2">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="sm" data-testid="button-excluir-paciente">
+                    <UserX className="h-4 w-4 mr-2" />
+                    Excluir Paciente
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Excluir paciente?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta ação não pode ser desfeita. O paciente e todo seu histórico de consultas serão permanentemente removidos do sistema.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={() => deletePacienteMutation.mutate()}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      data-testid="button-confirmar-excluir-paciente"
+                    >
+                      Excluir Permanentemente
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           </div>
         </CardHeader>
-        <CardContent className="grid gap-2">
-          {paciente.genero && (
-            <p className="text-sm"><span className="font-medium">Gênero:</span> {paciente.genero}</p>
-          )}
-          {paciente.setor && (
-            <p className="text-sm"><span className="font-medium">Setor:</span> {paciente.setor}</p>
-          )}
-          {paciente.email && (
-            <p className="text-sm"><span className="font-medium">Email:</span> {paciente.email}</p>
-          )}
-          {paciente.telefone && (
-            <p className="text-sm"><span className="font-medium">Telefone:</span> {paciente.telefone}</p>
-          )}
+        <CardContent className="space-y-4">
+          <div className="grid gap-2">
+            {paciente.genero && (
+              <p className="text-sm"><span className="font-medium">Gênero:</span> {paciente.genero}</p>
+            )}
+            {paciente.setor && (
+              <p className="text-sm"><span className="font-medium">Setor:</span> {paciente.setor}</p>
+            )}
+            {paciente.email && (
+              <p className="text-sm"><span className="font-medium">Email:</span> {paciente.email}</p>
+            )}
+            {paciente.telefone && (
+              <p className="text-sm"><span className="font-medium">Telefone:</span> {paciente.telefone}</p>
+            )}
+          </div>
+          
+          <div className="border-t pt-4">
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium">Observações da Psicóloga</label>
+              {!isEditingObservacoes ? (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setIsEditingObservacoes(true)}
+                  data-testid="button-editar-observacoes"
+                >
+                  Editar
+                </Button>
+              ) : (
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => {
+                      setObservacoes(paciente.observacoes || "");
+                      setIsEditingObservacoes(false);
+                    }}
+                    data-testid="button-cancelar-observacoes"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button 
+                    variant="default" 
+                    size="sm" 
+                    onClick={() => updateObservacoesMutation.mutate()}
+                    disabled={updateObservacoesMutation.isPending}
+                    data-testid="button-salvar-observacoes"
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    {updateObservacoesMutation.isPending ? "Salvando..." : "Salvar"}
+                  </Button>
+                </div>
+              )}
+            </div>
+            {isEditingObservacoes ? (
+              <Textarea
+                value={observacoes}
+                onChange={(e) => setObservacoes(e.target.value)}
+                placeholder="Adicione observações sobre o paciente..."
+                rows={5}
+                data-testid="textarea-observacoes"
+              />
+            ) : (
+              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                {paciente.observacoes || "Nenhuma observação registrada"}
+              </p>
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -181,7 +318,7 @@ export default function PerfilPaciente() {
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancelar</AlertDialogCancel>
                             <AlertDialogAction 
-                              onClick={() => deleteMutation.mutate(consulta.id)}
+                              onClick={() => deleteConsultaMutation.mutate(consulta.id)}
                               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                             >
                               Excluir

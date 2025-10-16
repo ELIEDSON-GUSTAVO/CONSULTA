@@ -192,6 +192,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // GET solicitacao by tracking code
+  app.get("/api/solicitacoes/codigo/:codigo", async (req, res) => {
+    try {
+      const solicitacao = await storage.getSolicitacaoByCodigo(req.params.codigo);
+      if (!solicitacao) {
+        return res.status(404).json({ error: "Solicitacao not found" });
+      }
+      res.json(solicitacao);
+    } catch (error) {
+      console.error("Error fetching solicitacao by codigo:", error);
+      res.status(500).json({ error: "Failed to fetch solicitacao" });
+    }
+  });
+
   // POST create new solicitacao
   app.post("/api/solicitacoes", async (req, res) => {
     try {

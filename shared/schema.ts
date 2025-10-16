@@ -33,6 +33,7 @@ export const consultas = pgTable("consultas", {
 
 export const solicitacoes = pgTable("solicitacoes", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  codigoRastreamento: text("codigo_rastreamento").notNull().unique(),
   nomeFuncionario: text("nome_funcionario").notNull(),
   genero: text("genero"),
   setor: text("setor").notNull(),
@@ -95,6 +96,7 @@ export const insertSolicitacaoSchema = createInsertSchema(solicitacoes).omit({
   createdAt: true,
   consultaId: true,
   observacoesPsicologo: true,
+  codigoRastreamento: true,
 }).extend({
   nomeFuncionario: z.string().min(1, "Nome é obrigatório"),
   genero: z.enum(["masculino", "feminino", "outro"]).optional(),

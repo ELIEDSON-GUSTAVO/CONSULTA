@@ -21,6 +21,7 @@ export interface IStorage {
   
   getSolicitacoes(): Promise<Solicitacao[]>;
   getSolicitacao(id: string): Promise<Solicitacao | undefined>;
+  getSolicitacaoByCodigo(codigo: string): Promise<Solicitacao | undefined>;
   createSolicitacao(solicitacao: InsertSolicitacao): Promise<Solicitacao>;
   updateSolicitacao(id: string, solicitacao: UpdateSolicitacao): Promise<Solicitacao | undefined>;
   deleteSolicitacao(id: string): Promise<boolean>;
@@ -43,6 +44,24 @@ export class DatabaseStorage implements IStorage {
     }
     
     return "P-00001";
+  }
+
+  private async generateCodigoRastreamento(): Promise<string> {
+    const allSolicitacoes = await db.select().from(solicitacoes).orderBy(desc(solicitacoes.createdAt));
+    
+    if (allSolicitacoes.length === 0) {
+      return "S-00001";
+    }
+    
+    const lastCodigo = allSolicitacoes[0].codigoRastreamento;
+    const numeroMatch = lastCodigo.match(/S-(\d+)/);
+    
+    if (numeroMatch) {
+      const numero = parseInt(numeroMatch[1]) + 1;
+      return `S-${String(numero).padStart(5, '0')}`;
+    }
+    
+    return "S-00001";
   }
 
   async getPacientes(): Promise<Paciente[]> {
@@ -124,6 +143,10 @@ export class DatabaseStorage implements IStorage {
 
   async deletePaciente(id: string): Promise<boolean> {
     try {
+      // Primeiro, deletar todas as consultas associadas ao paciente
+      await db.delete(consultas).where(eq(consultas.pacienteId, id));
+      
+      // Depois, deletar o paciente
       const result = await db.delete(pacientes).where(eq(pacientes.id, id));
       return result.rowCount !== null && result.rowCount > 0;
     } catch (error) {
@@ -196,12 +219,41 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async getSolicitacaoByCodigo(codigo: string): Promise<Solicitacao | undefined> {
+    try {
+      const [solicitacao] = await db.select().from(solicitacoes).where(eq(solicitacoes.codigoRastreamento, codigo));
+      return solicitacao || undefined;
+    } catch (error) {
+      console.error("Error fetching solicitacao by codigo:", error);
+      return undefined;
+    }
+  }
+
   async createSolicitacao(insertSolicitacao: InsertSolicitacao): Promise<Solicitacao> {
-    const [solicitacao] = await db
-      .insert(solicitacoes)
-      .values(insertSolicitacao)
-      .returning();
-    return solicitacao;
+    // Retry logic para evitar conflitos de código de rastreamento
+    let attempts = 0;
+    const maxAttempts = 5;
+    
+    while (attempts < maxAttempts) {
+      try {
+        const codigoRastreamento = await this.generateCodigoRastreamento();
+        const [solicitacao] = await db
+          .insert(solicitacoes)
+          .values({ ...insertSolicitacao, codigoRastreamento })
+          .returning();
+        return solicitacao;
+      } catch (error: any) {
+        // Se for erro de constraint de unicidade, tentar novamente
+        if (error?.code === '23505' && attempts < maxAttempts - 1) {
+          attempts++;
+          await new Promise(resolve => setTimeout(resolve, 100 * attempts));
+          continue;
+        }
+        throw error;
+      }
+    }
+    
+    throw new Error('Não foi possível criar solicitação após múltiplas tentativas');
   }
 
   async updateSolicitacao(id: string, updateSolicitacao: UpdateSolicitacao): Promise<Solicitacao | undefined> {
