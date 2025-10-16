@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { type Consulta } from "@shared/schema";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend, Area, AreaChart, ComposedChart, PieChart, Pie, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, AreaChart, Area, PieChart, Pie, Cell } from "recharts";
 import { Calendar, Users, CheckCircle, XCircle, Clock, TrendingUp, TrendingDown } from "lucide-react";
 
 const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
@@ -496,17 +496,7 @@ export default function Relatorios() {
           {evolucaoData.length > 0 ? (
             <>
               <ResponsiveContainer width="100%" height={400}>
-                <ComposedChart data={evolucaoData}>
-                  <defs>
-                    <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                    </linearGradient>
-                    <linearGradient id="colorRealizadas" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--chart-2))" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="hsl(var(--chart-2))" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
+                <BarChart data={evolucaoData}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-border" opacity={0.3} />
                   <XAxis 
                     dataKey="mes" 
@@ -533,45 +523,11 @@ export default function Relatorios() {
                   />
                   <Legend 
                     wrapperStyle={{ paddingTop: "20px" }}
-                    iconType="circle"
                   />
-                  <Area
-                    type="monotone"
-                    dataKey="total"
-                    stroke="hsl(var(--primary))"
-                    strokeWidth={3}
-                    fill="url(#colorTotal)"
-                    name="Total"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="realizadas"
-                    stroke="hsl(var(--chart-2))"
-                    strokeWidth={2.5}
-                    dot={{ fill: "hsl(var(--chart-2))", r: 5 }}
-                    activeDot={{ r: 7 }}
-                    name="Realizadas"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="agendadas"
-                    stroke="hsl(var(--chart-3))"
-                    strokeWidth={2.5}
-                    dot={{ fill: "hsl(var(--chart-3))", r: 5 }}
-                    activeDot={{ r: 7 }}
-                    name="Agendadas"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="canceladas"
-                    stroke="hsl(var(--destructive))"
-                    strokeWidth={2}
-                    dot={{ fill: "hsl(var(--destructive))", r: 4 }}
-                    activeDot={{ r: 6 }}
-                    strokeDasharray="5 5"
-                    name="Canceladas"
-                  />
-                </ComposedChart>
+                  <Bar dataKey="realizadas" fill="hsl(var(--chart-2))" name="Realizadas" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="agendadas" fill="hsl(var(--chart-3))" name="Agendadas" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="canceladas" fill="hsl(var(--destructive))" name="Canceladas" radius={[4, 4, 0, 0]} />
+                </BarChart>
               </ResponsiveContainer>
               
               <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4 border-t pt-6">
