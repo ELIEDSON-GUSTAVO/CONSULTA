@@ -23,7 +23,7 @@ export default function Login({ onLogin }: LoginProps) {
   };
 
   const handlePsicologaLogin = () => {
-    if (senha === "psicologa123") {
+    if (senha === "NEXTPY@2026") {
       onLogin("psicologa");
       setLocation("/");
     } else {
