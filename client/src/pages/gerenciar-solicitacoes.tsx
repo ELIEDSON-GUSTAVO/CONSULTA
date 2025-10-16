@@ -15,7 +15,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { Solicitacao } from "@shared/schema";
+import type { Solicitacao, Paciente, InsertPaciente } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { CheckCircle, XCircle, Clock, Calendar, User, Briefcase, FileText, AlertCircle } from "lucide-react";
@@ -36,17 +36,49 @@ export default function GerenciarSolicitacoes() {
     queryKey: ["/api/solicitacoes"],
   });
 
+  const { data: pacientes = [], isFetching: isFetchingPacientes } = useQuery<Paciente[]>({
+    queryKey: ["/api/pacientes"],
+  });
+
   const aprovarMutation = useMutation({
     mutationFn: async (data: { id: string; observacoes: string; dataConsulta: string; horarioConsulta: string; especialidade: string }) => {
+      if (isFetchingPacientes) {
+        throw new Error("Aguardando carregamento dos pacientes...");
+      }
+
+      // Primeiro, criar ou encontrar o paciente
+      let pacienteId: string;
+      
+      const pacienteExistente = pacientes.find(
+        (p) => p.nome.toLowerCase() === selectedSolicitacao?.nomeFuncionario.toLowerCase()
+      );
+
+      if (pacienteExistente) {
+        pacienteId = pacienteExistente.id;
+      } else {
+        const genero = selectedSolicitacao?.genero;
+        const novoPacienteData: InsertPaciente = {
+          nome: selectedSolicitacao?.nomeFuncionario || "",
+          genero: genero === "masculino" || genero === "feminino" || genero === "outro" ? genero : undefined,
+          setor: selectedSolicitacao?.setor || undefined,
+          telefone: selectedSolicitacao?.telefone || undefined,
+          email: selectedSolicitacao?.email || undefined,
+        };
+        const novoPaciente = await apiRequest("POST", "/api/pacientes", novoPacienteData) as unknown as Paciente;
+        pacienteId = novoPaciente.id;
+      }
+
+      // Atualizar a solicitação
       await apiRequest("PATCH", `/api/solicitacoes/${data.id}`, {
         status: "aprovada",
         observacoesPsicologo: data.observacoes,
       });
 
+      // Criar a consulta vinculada ao paciente
       await apiRequest("POST", "/api/consultas", {
-        paciente: selectedSolicitacao?.nomeFuncionario || "",
-        genero: selectedSolicitacao?.genero || "",
-        setor: selectedSolicitacao?.setor || "",
+        pacienteId,
+        genero: selectedSolicitacao?.genero,
+        setor: selectedSolicitacao?.setor,
         data: data.dataConsulta,
         horario: data.horarioConsulta,
         status: "agendada",
@@ -58,9 +90,10 @@ export default function GerenciarSolicitacoes() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["/api/solicitacoes"] });
       await queryClient.invalidateQueries({ queryKey: ["/api/consultas"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/pacientes"] });
       toast({
         title: "Solicitação aprovada!",
-        description: "A consulta foi agendada com sucesso.",
+        description: "O paciente foi cadastrado e a consulta foi agendada com sucesso.",
       });
       setIsApproveDialogOpen(false);
       setSelectedSolicitacao(null);
@@ -382,10 +415,10 @@ export default function GerenciarSolicitacoes() {
             </Button>
             <Button
               onClick={confirmAprovar}
-              disabled={!dataConsulta || !horarioConsulta || aprovarMutation.isPending}
+              disabled={!dataConsulta || !horarioConsulta || aprovarMutation.isPending || isFetchingPacientes}
               data-testid="button-confirmar-aprovar"
             >
-              {aprovarMutation.isPending ? "Aprovando..." : "Aprovar e Agendar"}
+              {aprovarMutation.isPending ? "Aprovando..." : isFetchingPacientes ? "Carregando..." : "Aprovar e Agendar"}
             </Button>
           </DialogFooter>
         </DialogContent>
