@@ -77,6 +77,22 @@ consultas table:
 - status (text, required) - Status enum: agendada/realizada/cancelada
 - observacoes (text, optional) - Notes
 - createdAt (timestamp, auto-generated)
+
+solicitacoes table:
+- id (varchar, UUID primary key)
+- nomeFuncionario (text, required) - Employee name
+- genero (text, optional) - Gender
+- setor (text, required) - Department/sector
+- motivo (text, required) - Main reason for consultation
+- descricao (text, required) - Detailed description
+- dataPreferencial (date, optional) - Preferred date
+- horarioPreferencial (text, optional) - Preferred time period
+- email (text, optional) - Employee email for contact
+- telefone (text, optional) - Employee phone for contact
+- status (text, required) - Status: pendente/aprovada/rejeitada
+- consultaId (varchar, optional) - Linked consultation ID when approved
+- observacoesPsicologo (text, optional) - Psychologist notes
+- createdAt (timestamp, auto-generated)
 ```
 
 **Migration Strategy**
