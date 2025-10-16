@@ -25,11 +25,9 @@ import {
 import { insertSolicitacaoSchema, type InsertSolicitacao } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Send } from "lucide-react";
-import { Link } from "wouter";
+import { Send } from "lucide-react";
 
 export default function SolicitarAtendimento() {
-  const [, setLocation] = useLocation();
   const { toast } = useToast();
 
   const form = useForm<InsertSolicitacao>({
@@ -56,7 +54,7 @@ export default function SolicitarAtendimento() {
         title: "Solicitação enviada!",
         description: "Sua solicitação foi enviada para análise da psicóloga.",
       });
-      setLocation("/");
+      form.reset();
     },
     onError: () => {
       toast({
@@ -73,16 +71,9 @@ export default function SolicitarAtendimento() {
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
-      <div className="flex items-center gap-4">
-        <Link href="/">
-          <Button variant="ghost" size="icon" data-testid="button-back">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        </Link>
-        <div>
-          <h1 className="text-3xl font-semibold" data-testid="text-page-title">Solicitar Atendimento Psicológico</h1>
-          <p className="text-muted-foreground mt-2">Preencha o formulário para solicitar um atendimento</p>
-        </div>
+      <div>
+        <h1 className="text-3xl font-semibold" data-testid="text-page-title">Solicitar Atendimento Psicológico</h1>
+        <p className="text-muted-foreground mt-2">Preencha o formulário para solicitar um atendimento</p>
       </div>
 
       <Card>
@@ -147,23 +138,13 @@ export default function SolicitarAtendimento() {
                       <FormLabel className="text-sm font-medium">
                         Setor <span className="text-destructive">*</span>
                       </FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger data-testid="select-setor">
-                            <SelectValue placeholder="Selecione seu setor" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Administrativo">Administrativo</SelectItem>
-                          <SelectItem value="Operacional">Operacional</SelectItem>
-                          <SelectItem value="Comercial">Comercial</SelectItem>
-                          <SelectItem value="Financeiro">Financeiro</SelectItem>
-                          <SelectItem value="RH">RH</SelectItem>
-                          <SelectItem value="TI">TI</SelectItem>
-                          <SelectItem value="Logística">Logística</SelectItem>
-                          <SelectItem value="Produção">Produção</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <Input
+                          placeholder="Digite seu setor (Ex: Administrativo, RH, TI...)"
+                          {...field}
+                          data-testid="input-setor"
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -290,11 +271,6 @@ export default function SolicitarAtendimento() {
                     </>
                   )}
                 </Button>
-                <Link href="/">
-                  <Button type="button" variant="outline" data-testid="button-cancel">
-                    Cancelar
-                  </Button>
-                </Link>
               </div>
             </form>
           </Form>

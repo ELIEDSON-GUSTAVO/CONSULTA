@@ -1,4 +1,4 @@
-import { Home, Plus, History, Settings, BarChart3 } from "lucide-react";
+import { Home, Plus, History, BarChart3, UserPlus, ClipboardCheck } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import {
   Sidebar,
@@ -13,11 +13,16 @@ import {
 } from "@/components/ui/sidebar";
 import nextLogoUrl from "@assets/e4e65a_fe3ebb908b914ff3b921b1c684c4eba0~mv2_1760629074249.jpg";
 
-const menuItems = [
+const psicologaMenuItems = [
   {
     title: "Dashboard",
     url: "/",
     icon: Home,
+  },
+  {
+    title: "Gerenciar Solicitações",
+    url: "/gerenciar-solicitacoes",
+    icon: ClipboardCheck,
   },
   {
     title: "Nova Consulta",
@@ -36,8 +41,21 @@ const menuItems = [
   },
 ];
 
-export function AppSidebar() {
+const funcionarioMenuItems = [
+  {
+    title: "Solicitar Atendimento",
+    url: "/solicitar-atendimento",
+    icon: UserPlus,
+  },
+];
+
+interface AppSidebarProps {
+  userType: "funcionario" | "psicologa";
+}
+
+export function AppSidebar({ userType }: AppSidebarProps) {
   const [location] = useLocation();
+  const menuItems = userType === "psicologa" ? psicologaMenuItems : funcionarioMenuItems;
 
   return (
     <Sidebar>
@@ -56,12 +74,14 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Menu</SidebarGroupLabel>
+          <SidebarGroupLabel>
+            {userType === "psicologa" ? "Menu Principal" : "Funcionário"}
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={location === item.url} data-testid={`link-${item.title.toLowerCase().replace(" ", "-")}`}>
+                  <SidebarMenuButton asChild isActive={location === item.url} data-testid={`link-${item.title.toLowerCase().replace(/ /g, "-")}`}>
                     <Link href={item.url}>
                       <item.icon className="h-4 w-4" />
                       <span>{item.title}</span>
