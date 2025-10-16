@@ -69,10 +69,10 @@ export const insertConsultaSchema = createInsertSchema(consultas).omit({
   id: true,
   createdAt: true,
   paciente: true,
-  genero: true,
-  setor: true,
 }).extend({
   pacienteId: z.string().min(1, "Paciente é obrigatório"),
+  genero: z.enum(["masculino", "feminino", "outro"]).optional(),
+  setor: z.string().optional(),
   data: z.string().min(1, "Data é obrigatória"),
   horario: z.string().min(1, "Horário é obrigatório"),
   status: z.enum(["agendada", "realizada", "cancelada"]).default("agendada"),

@@ -1,8 +1,16 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { type Consulta } from "@shared/schema";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, AreaChart, Area, PieChart, Pie, Cell } from "recharts";
 import { Calendar, Users, CheckCircle, XCircle, Clock, TrendingUp, TrendingDown } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
 const PERIOD_COLORS = {
@@ -17,6 +25,9 @@ const GENDER_COLORS = {
 };
 
 export default function Relatorios() {
+  const [selectedSetor, setSelectedSetor] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+
   const { data: consultas = [], isLoading } = useQuery<Consulta[]>({
     queryKey: ["/api/consultas"],
   });
@@ -420,8 +431,20 @@ export default function Relatorios() {
               </div>
               
               <div className="pt-4 border-t">
+                <p className="text-sm text-muted-foreground mb-3">
+                  Clique nas barras para ver detalhes do setor
+                </p>
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={setorData}>
+                  <BarChart 
+                    data={setorData}
+                    onClick={(data) => {
+                      if (data && data.activePayload && data.activePayload[0]) {
+                        const setor = data.activePayload[0].payload.name;
+                        setSelectedSetor(setor);
+                        setDialogOpen(true);
+                      }
+                    }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" className="stroke-border" opacity={0.3} />
                     <XAxis 
                       dataKey="nameShort" 
@@ -449,9 +472,27 @@ export default function Relatorios() {
                       }}
                     />
                     <Legend wrapperStyle={{ paddingTop: "20px" }} />
-                    <Bar dataKey="compareceram" fill="hsl(var(--chart-2))" name="Compareceram" radius={[8, 8, 0, 0]} />
-                    <Bar dataKey="naoCompareceram" fill="hsl(var(--destructive))" name="Não Compareceram" radius={[8, 8, 0, 0]} />
-                    <Bar dataKey="pendentes" fill="hsl(var(--muted))" name="Pendentes" radius={[8, 8, 0, 0]} />
+                    <Bar 
+                      dataKey="compareceram" 
+                      fill="#10b981" 
+                      name="Compareceram" 
+                      radius={[8, 8, 0, 0]}
+                      cursor="pointer"
+                    />
+                    <Bar 
+                      dataKey="naoCompareceram" 
+                      fill="#ef4444" 
+                      name="Não Compareceram" 
+                      radius={[8, 8, 0, 0]}
+                      cursor="pointer"
+                    />
+                    <Bar 
+                      dataKey="pendentes" 
+                      fill="#94a3b8" 
+                      name="Pendentes" 
+                      radius={[8, 8, 0, 0]}
+                      cursor="pointer"
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -662,6 +703,191 @@ export default function Relatorios() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">Detalhes do Setor: {selectedSetor}</DialogTitle>
+            <DialogDescription>
+              Estatísticas completas e detalhadas do setor selecionado
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedSetor && (() => {
+            const setorInfo = setorData.find(s => s.name === selectedSetor);
+            const consultasDoSetor = consultas.filter(c => (c.setor || "Não informado") === selectedSetor);
+            
+            if (!setorInfo || consultasDoSetor.length === 0) {
+              return <p className="text-center text-muted-foreground py-8">Nenhum dado disponível para este setor</p>;
+            }
+
+            const porStatus = {
+              agendada: consultasDoSetor.filter(c => c.status === "agendada").length,
+              realizada: consultasDoSetor.filter(c => c.status === "realizada").length,
+              cancelada: consultasDoSetor.filter(c => c.status === "cancelada").length,
+            };
+
+            const porGenero = {
+              masculino: consultasDoSetor.filter(c => c.genero === "masculino").length,
+              feminino: consultasDoSetor.filter(c => c.genero === "feminino").length,
+              outro: consultasDoSetor.filter(c => c.genero === "outro").length,
+            };
+
+            const especialidades = consultasDoSetor.reduce((acc, c) => {
+              if (c.especialidade) {
+                acc[c.especialidade] = (acc[c.especialidade] || 0) + 1;
+              }
+              return acc;
+            }, {} as Record<string, number>);
+
+            const motivos = consultasDoSetor.reduce((acc, c) => {
+              if (c.motivo) {
+                acc[c.motivo] = (acc[c.motivo] || 0) + 1;
+              }
+              return acc;
+            }, {} as Record<string, number>);
+
+            return (
+              <div className="space-y-6">
+                <div className="grid gap-4 md:grid-cols-3">
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">Total de Consultas</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold">{setorInfo.total}</div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {setorInfo.percentualParticipacao}% do total geral
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">Comparecimento</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold text-chart-2">{setorInfo.percentualComparecimento}%</div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {setorInfo.compareceram} de {setorInfo.total} consultas
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">Pendentes</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold text-muted-foreground">{setorInfo.pendentes}</div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {setorInfo.naoCompareceram} não compareceram
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Status das Consultas</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm">Agendadas</span>
+                          <span className="text-sm font-bold text-chart-3">{porStatus.agendada}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm">Realizadas</span>
+                          <span className="text-sm font-bold text-chart-2">{porStatus.realizada}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm">Canceladas</span>
+                          <span className="text-sm font-bold text-destructive">{porStatus.cancelada}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Distribuição por Gênero</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: GENDER_COLORS.masculino }} />
+                            <span className="text-sm">Masculino</span>
+                          </div>
+                          <span className="text-sm font-bold">{porGenero.masculino}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: GENDER_COLORS.feminino }} />
+                            <span className="text-sm">Feminino</span>
+                          </div>
+                          <span className="text-sm font-bold">{porGenero.feminino}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: GENDER_COLORS.outro }} />
+                            <span className="text-sm">Outro</span>
+                          </div>
+                          <span className="text-sm font-bold">{porGenero.outro}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {Object.keys(especialidades).length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Top Especialidades</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {Object.entries(especialidades)
+                          .sort(([, a], [, b]) => b - a)
+                          .slice(0, 5)
+                          .map(([esp, count]) => (
+                            <div key={esp} className="flex items-center justify-between py-2 border-b last:border-0">
+                              <span className="text-sm">{esp}</span>
+                              <span className="text-sm font-bold text-primary">{count}</span>
+                            </div>
+                          ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {Object.keys(motivos).length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Principais Motivos</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {Object.entries(motivos)
+                          .sort(([, a], [, b]) => b - a)
+                          .slice(0, 5)
+                          .map(([motivo, count]) => (
+                            <div key={motivo} className="flex items-center justify-between py-2 border-b last:border-0">
+                              <span className="text-sm">{motivo}</span>
+                              <span className="text-sm font-bold text-primary">{count}</span>
+                            </div>
+                          ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

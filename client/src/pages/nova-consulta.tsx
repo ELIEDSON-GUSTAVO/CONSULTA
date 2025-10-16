@@ -1,6 +1,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,20 +21,40 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { insertConsultaSchema, type InsertConsulta } from "@shared/schema";
+import { type InsertPaciente, type Paciente } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
+import { z } from "zod";
+
+const consultaFormSchema = z.object({
+  pacienteNome: z.string().min(1, "Nome do paciente é obrigatório"),
+  genero: z.enum(["masculino", "feminino", "outro"]).optional(),
+  setor: z.string().optional(),
+  data: z.string().min(1, "Data é obrigatória"),
+  horario: z.string().min(1, "Horário é obrigatório"),
+  status: z.enum(["agendada", "realizada", "cancelada"]).default("agendada"),
+  compareceu: z.enum(["sim", "nao", "pendente"]).optional(),
+  especialidade: z.string().optional(),
+  motivo: z.string().optional(),
+  observacoes: z.string().optional(),
+});
+
+type ConsultaFormData = z.infer<typeof consultaFormSchema>;
 
 export default function NovaConsulta() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  const form = useForm<InsertConsulta>({
-    resolver: zodResolver(insertConsultaSchema),
+  const { data: pacientes } = useQuery<Paciente[]>({
+    queryKey: ["/api/pacientes"],
+  });
+
+  const form = useForm<ConsultaFormData>({
+    resolver: zodResolver(consultaFormSchema),
     defaultValues: {
-      paciente: "",
+      pacienteNome: "",
       genero: undefined,
       setor: "",
       data: "",
@@ -48,11 +68,47 @@ export default function NovaConsulta() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: InsertConsulta) => {
-      await apiRequest("POST", "/api/consultas", data);
+    mutationFn: async (data: ConsultaFormData) => {
+      if (!pacientes) {
+        throw new Error("Aguardando carregamento dos pacientes...");
+      }
+
+      let pacienteId: string;
+
+      const pacienteExistente = pacientes.find(
+        (p) => p.nome.toLowerCase() === data.pacienteNome.toLowerCase()
+      );
+
+      if (pacienteExistente) {
+        pacienteId = pacienteExistente.id;
+      } else {
+        const novoPacienteData: InsertPaciente = {
+          nome: data.pacienteNome,
+          genero: data.genero,
+          setor: data.setor,
+        };
+        const novoPaciente = await apiRequest<Paciente>("POST", "/api/pacientes", novoPacienteData);
+        pacienteId = novoPaciente.id;
+      }
+
+      const consultaData = {
+        pacienteId,
+        genero: data.genero,
+        setor: data.setor,
+        data: data.data,
+        horario: data.horario,
+        status: data.status,
+        compareceu: data.compareceu,
+        especialidade: data.especialidade,
+        motivo: data.motivo,
+        observacoes: data.observacoes,
+      };
+
+      await apiRequest("POST", "/api/consultas", consultaData);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["/api/consultas"] });
+      await queryClient.invalidateQueries({ queryKey: ["/api/pacientes"] });
       toast({
         title: "Consulta cadastrada",
         description: "A consulta foi criada com sucesso.",
@@ -68,7 +124,7 @@ export default function NovaConsulta() {
     },
   });
 
-  const onSubmit = (data: InsertConsulta) => {
+  const onSubmit = (data: ConsultaFormData) => {
     createMutation.mutate(data);
   };
 
@@ -96,7 +152,7 @@ export default function NovaConsulta() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
                 control={form.control}
-                name="paciente"
+                name="pacienteNome"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-sm font-medium">
