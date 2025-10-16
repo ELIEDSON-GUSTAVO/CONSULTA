@@ -17,7 +17,6 @@ import EditarConsulta from "@/pages/editar-consulta";
 import Historico from "@/pages/historico";
 import Relatorios from "@/pages/relatorios";
 import SolicitarAtendimento from "@/pages/solicitar-atendimento";
-import AcompanharSolicitacao from "@/pages/acompanhar-solicitacao";
 import GerenciarSolicitacoes from "@/pages/gerenciar-solicitacoes";
 import Pacientes from "@/pages/pacientes";
 import PerfilPaciente from "@/pages/perfil-paciente";
@@ -30,7 +29,6 @@ function Router({ userType }: { userType: UserType }) {
     return (
       <Switch>
         <Route path="/solicitar-atendimento" component={SolicitarAtendimento} />
-        <Route path="/acompanhar-solicitacao" component={AcompanharSolicitacao} />
         <Route path="/" component={SolicitarAtendimento} />
         <Route component={NotFound} />
       </Switch>

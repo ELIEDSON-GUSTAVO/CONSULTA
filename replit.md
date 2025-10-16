@@ -2,9 +2,11 @@
 
 ## Overview
 
-Next is a professional psychological consultation management system designed for healthcare providers. The application enables psychologists to manage patient appointments with a clean, efficient interface focused on data entry, scheduling, and consultation tracking. Built as a full-stack web application, it provides CRUD operations for consultation records with status tracking (scheduled, completed, cancelled) and observation notes.
+Next is a comprehensive psychological consultation management system with dual user interfaces. The **employee portal** (no password required) allows staff to submit consultation requests and track their status using unique tracking codes. The **psychologist interface** (password: NEXTPY@2026) provides full management capabilities including patient records, consultation scheduling, request approval/rejection, and analytics.
 
-The system emphasizes clinical clarity and workflow efficiency, featuring a dashboard for quick consultation overview, forms for creating and editing appointments, and a historical record search with filtering capabilities.
+The system features a medical record system where approved employees automatically become patients with unique Código Prontuário (P-00001 format). Employees track requests using Código de Rastreamento (S-00001 format). The system supports full CRUD operations, status tracking, attendance monitoring, filtering, sector-based analytics, and interactive charts.
+
+The application emphasizes clinical clarity and workflow efficiency with separate optimized interfaces for employees and psychologists.
 
 ## User Preferences
 
@@ -80,6 +82,7 @@ consultas table:
 
 solicitacoes table:
 - id (varchar, UUID primary key)
+- codigoRastreamento (text, unique, required) - Tracking code format S-00001
 - nomeFuncionario (text, required) - Employee name
 - genero (text, optional) - Gender
 - setor (text, required) - Department/sector
@@ -92,6 +95,17 @@ solicitacoes table:
 - status (text, required) - Status: pendente/aprovada/rejeitada
 - consultaId (varchar, optional) - Linked consultation ID when approved
 - observacoesPsicologo (text, optional) - Psychologist notes
+- createdAt (timestamp, auto-generated)
+
+pacientes table:
+- id (varchar, UUID primary key)
+- codigoProntuario (text, unique, required) - Medical record code format P-00001
+- nome (text, required) - Patient full name
+- genero (text, optional) - Gender
+- setor (text, required) - Work department/sector
+- email (text, optional) - Contact email
+- telefone (text, optional) - Contact phone
+- observacoes (text, optional) - Psychologist private notes
 - createdAt (timestamp, auto-generated)
 ```
 
@@ -166,3 +180,20 @@ solicitacoes table:
 - **vite** - Frontend build tool with React plugin
 - **postcss** - CSS processing with autoprefixer
 - Custom path aliases for clean imports (@/, @shared/, @assets/)
+
+## Recent Changes
+
+### Employee Portal Unified Interface (October 2025)
+- **Tabs-based Interface**: Employee portal now features a unified tabbed interface with two sections:
+  - "Solicitar Atendimento" tab: Full consultation request form
+  - "Consultar Solicitação" tab: Track request status using tracking code
+- **Tracking System**: Automatic generation of unique tracking codes (S-00001 format) for each request
+- **Post-submission Dialog**: Success modal displays tracking code with copy-to-clipboard functionality
+- **Status Tracking**: Employees can search by tracking code to view real-time status (pendente/aprovada/rejeitada)
+- **Simplified Navigation**: Single "Portal do Funcionário" menu item for all employee functions
+
+### Technical Implementation
+- Retry logic with exponential backoff prevents tracking code conflicts during concurrent submissions
+- Query-based status lookup with loading states and error handling
+- Color-coded status badges (yellow/green/red) for visual clarity
+- Responsive design with shadcn Tabs component for seamless mobile experience

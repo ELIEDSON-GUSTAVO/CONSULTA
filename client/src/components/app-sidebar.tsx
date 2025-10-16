@@ -48,14 +48,9 @@ const psicologaMenuItems = [
 
 const funcionarioMenuItems = [
   {
-    title: "Solicitar Atendimento",
+    title: "Portal do Funcionário",
     url: "/solicitar-atendimento",
     icon: UserPlus,
-  },
-  {
-    title: "Acompanhar Solicitação",
-    url: "/acompanhar-solicitacao",
-    icon: Search,
   },
 ];
 
