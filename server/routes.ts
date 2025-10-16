@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertConsultaSchema, updateConsultaSchema } from "@shared/schema";
+import { insertConsultaSchema, updateConsultaSchema, insertSolicitacaoSchema, updateSolicitacaoSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // GET all consultas
@@ -73,6 +73,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting consulta:", error);
       res.status(500).json({ error: "Failed to delete consulta" });
+    }
+  });
+
+  // GET all solicitacoes
+  app.get("/api/solicitacoes", async (req, res) => {
+    try {
+      const solicitacoes = await storage.getSolicitacoes();
+      res.json(solicitacoes);
+    } catch (error) {
+      console.error("Error fetching solicitacoes:", error);
+      res.status(500).json({ error: "Failed to fetch solicitacoes" });
+    }
+  });
+
+  // GET single solicitacao by id
+  app.get("/api/solicitacoes/:id", async (req, res) => {
+    try {
+      const solicitacao = await storage.getSolicitacao(req.params.id);
+      if (!solicitacao) {
+        return res.status(404).json({ error: "Solicitacao not found" });
+      }
+      res.json(solicitacao);
+    } catch (error) {
+      console.error("Error fetching solicitacao:", error);
+      res.status(500).json({ error: "Failed to fetch solicitacao" });
+    }
+  });
+
+  // POST create new solicitacao
+  app.post("/api/solicitacoes", async (req, res) => {
+    try {
+      const validated = insertSolicitacaoSchema.parse(req.body);
+      const solicitacao = await storage.createSolicitacao(validated);
+      res.status(201).json(solicitacao);
+    } catch (error) {
+      console.error("Error creating solicitacao:", error);
+      if (error instanceof Error && error.name === "ZodError") {
+        return res.status(400).json({ error: "Invalid data", details: error });
+      }
+      res.status(500).json({ error: "Failed to create solicitacao" });
+    }
+  });
+
+  // PATCH update solicitacao (aprovar/rejeitar)
+  app.patch("/api/solicitacoes/:id", async (req, res) => {
+    try {
+      const validated = updateSolicitacaoSchema.parse(req.body);
+      const solicitacao = await storage.updateSolicitacao(req.params.id, validated);
+      if (!solicitacao) {
+        return res.status(404).json({ error: "Solicitacao not found" });
+      }
+      res.json(solicitacao);
+    } catch (error) {
+      console.error("Error updating solicitacao:", error);
+      if (error instanceof Error && error.name === "ZodError") {
+        return res.status(400).json({ error: "Invalid data", details: error });
+      }
+      res.status(500).json({ error: "Failed to update solicitacao" });
+    }
+  });
+
+  // DELETE solicitacao
+  app.delete("/api/solicitacoes/:id", async (req, res) => {
+    try {
+      const success = await storage.deleteSolicitacao(req.params.id);
+      if (!success) {
+        return res.status(404).json({ error: "Solicitacao not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting solicitacao:", error);
+      res.status(500).json({ error: "Failed to delete solicitacao" });
     }
   });
 

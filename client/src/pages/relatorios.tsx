@@ -44,6 +44,23 @@ export default function Relatorios() {
     return acc;
   }, {} as Record<string, number>);
 
+  const porSetor = consultas.reduce((acc, c) => {
+    const setor = c.setor || "Não Informado";
+    if (!acc[setor]) {
+      acc[setor] = {
+        total: 0,
+        compareceram: 0,
+        naoCompareceram: 0,
+        pendentes: 0
+      };
+    }
+    acc[setor].total += 1;
+    if (c.compareceu === "sim") acc[setor].compareceram += 1;
+    if (c.compareceu === "nao") acc[setor].naoCompareceram += 1;
+    if (c.compareceu === "pendente" || !c.compareceu) acc[setor].pendentes += 1;
+    return acc;
+  }, {} as Record<string, { total: number; compareceram: number; naoCompareceram: number; pendentes: number }>);
+
   const evolucaoMensal = consultas.reduce((acc, c) => {
     const date = new Date(c.data + "T00:00:00");
     const mesAno = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
@@ -82,6 +99,16 @@ export default function Relatorios() {
     total: value,
     percentual: totalConsultas > 0 ? ((value / totalConsultas) * 100).toFixed(1) : "0.0",
   }));
+
+  const setorData = Object.entries(porSetor).map(([name, value]) => ({
+    name,
+    total: value.total,
+    compareceram: value.compareceram,
+    naoCompareceram: value.naoCompareceram,
+    pendentes: value.pendentes,
+    percentualParticipacao: totalConsultas > 0 ? ((value.total / totalConsultas) * 100).toFixed(1) : "0.0",
+    percentualComparecimento: value.total > 0 ? ((value.compareceram / value.total) * 100).toFixed(1) : "0.0",
+  })).sort((a, b) => b.total - a.total);
 
   const evolucaoData = Object.entries(evolucaoMensal)
     .map(([mesAno, value]) => {
@@ -269,6 +296,98 @@ export default function Relatorios() {
                   </div>
                 </div>
               ))}
+            </div>
+          ) : (
+            <p className="text-center text-muted-foreground py-12">Sem dados disponíveis</p>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xl font-semibold">Estatísticas por Setor</CardTitle>
+          <CardDescription>Total de consultas, participação e comparecimento por setor</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {setorData.length > 0 ? (
+            <div className="space-y-4">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b-2">
+                      <th className="text-left py-3 px-4 font-semibold text-sm">Setor</th>
+                      <th className="text-center py-3 px-4 font-semibold text-sm">Total</th>
+                      <th className="text-center py-3 px-4 font-semibold text-sm">% Participação</th>
+                      <th className="text-center py-3 px-4 font-semibold text-sm">Compareceram</th>
+                      <th className="text-center py-3 px-4 font-semibold text-sm">% Comparecimento</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {setorData.map((item) => (
+                      <tr key={item.name} className="border-b hover-elevate">
+                        <td className="py-4 px-4 font-medium">{item.name}</td>
+                        <td className="py-4 px-4 text-center">
+                          <span className="inline-flex items-center justify-center rounded-full bg-primary/10 text-primary px-3 py-1 text-sm font-semibold">
+                            {item.total}
+                          </span>
+                        </td>
+                        <td className="py-4 px-4 text-center text-muted-foreground">
+                          {item.percentualParticipacao}%
+                        </td>
+                        <td className="py-4 px-4 text-center">
+                          <div className="flex flex-col items-center gap-1">
+                            <span className="text-sm font-medium">{item.compareceram}</span>
+                            <span className="text-xs text-muted-foreground">
+                              ({item.naoCompareceram} não / {item.pendentes} pendentes)
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-4 px-4 text-center">
+                          <span className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-sm font-semibold ${
+                            parseFloat(item.percentualComparecimento) >= 80 
+                              ? "bg-chart-2/10 text-chart-2"
+                              : parseFloat(item.percentualComparecimento) >= 50
+                              ? "bg-chart-3/10 text-chart-3"
+                              : "bg-destructive/10 text-destructive"
+                          }`}>
+                            {item.percentualComparecimento}%
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              
+              <div className="pt-4 border-t">
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={setorData}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" opacity={0.3} />
+                    <XAxis 
+                      dataKey="name" 
+                      className="text-xs" 
+                      tick={{ fill: "hsl(var(--muted-foreground))" }}
+                      angle={-45}
+                      textAnchor="end"
+                      height={80}
+                    />
+                    <YAxis className="text-xs" tick={{ fill: "hsl(var(--muted-foreground))" }} />
+                    <Tooltip
+                      contentStyle={{ 
+                        backgroundColor: "hsl(var(--card))", 
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "8px",
+                        padding: "12px"
+                      }}
+                      labelStyle={{ color: "hsl(var(--foreground))", fontWeight: "600" }}
+                    />
+                    <Legend wrapperStyle={{ paddingTop: "20px" }} />
+                    <Bar dataKey="compareceram" fill="hsl(var(--chart-2))" name="Compareceram" radius={[8, 8, 0, 0]} />
+                    <Bar dataKey="naoCompareceram" fill="hsl(var(--destructive))" name="Não Compareceram" radius={[8, 8, 0, 0]} />
+                    <Bar dataKey="pendentes" fill="hsl(var(--muted))" name="Pendentes" radius={[8, 8, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           ) : (
             <p className="text-center text-muted-foreground py-12">Sem dados disponíveis</p>
