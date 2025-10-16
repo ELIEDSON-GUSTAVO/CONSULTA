@@ -9,6 +9,9 @@ export const consultas = pgTable("consultas", {
   data: date("data").notNull(),
   horario: time("horario").notNull(),
   status: text("status").notNull().default("agendada"),
+  compareceu: text("compareceu"),
+  especialidade: text("especialidade"),
+  motivo: text("motivo"),
   observacoes: text("observacoes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -21,6 +24,9 @@ export const insertConsultaSchema = createInsertSchema(consultas).omit({
   data: z.string().min(1, "Data é obrigatória"),
   horario: z.string().min(1, "Horário é obrigatório"),
   status: z.enum(["agendada", "realizada", "cancelada"]).default("agendada"),
+  compareceu: z.enum(["sim", "nao", "pendente"]).optional(),
+  especialidade: z.string().optional(),
+  motivo: z.string().optional(),
   observacoes: z.string().optional(),
 });
 

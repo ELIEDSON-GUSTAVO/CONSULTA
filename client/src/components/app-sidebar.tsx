@@ -1,4 +1,4 @@
-import { Home, Plus, History, Settings } from "lucide-react";
+import { Home, Plus, History, Settings, BarChart3 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import {
   Sidebar,
@@ -27,6 +27,11 @@ const menuItems = [
     title: "Histórico",
     url: "/historico",
     icon: History,
+  },
+  {
+    title: "Relatórios",
+    url: "/relatorios",
+    icon: BarChart3,
   },
 ];
 

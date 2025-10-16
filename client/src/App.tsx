@@ -11,6 +11,7 @@ import Dashboard from "@/pages/dashboard";
 import NovaConsulta from "@/pages/nova-consulta";
 import EditarConsulta from "@/pages/editar-consulta";
 import Historico from "@/pages/historico";
+import Relatorios from "@/pages/relatorios";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -20,6 +21,7 @@ function Router() {
       <Route path="/nova-consulta" component={NovaConsulta} />
       <Route path="/editar-consulta/:id" component={EditarConsulta} />
       <Route path="/historico" component={Historico} />
+      <Route path="/relatorios" component={Relatorios} />
       <Route component={NotFound} />
     </Switch>
   );

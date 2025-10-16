@@ -45,6 +45,9 @@ export default function EditarConsulta() {
       data: "",
       horario: "",
       status: "agendada",
+      compareceu: "pendente",
+      especialidade: "",
+      motivo: "",
       observacoes: "",
     },
   });
@@ -56,6 +59,9 @@ export default function EditarConsulta() {
         data: consulta.data,
         horario: consulta.horario,
         status: consulta.status as "agendada" | "realizada" | "cancelada",
+        compareceu: (consulta.compareceu as "sim" | "nao" | "pendente") || "pendente",
+        especialidade: consulta.especialidade || "",
+        motivo: consulta.motivo || "",
         observacoes: consulta.observacoes || "",
       });
     }
@@ -209,6 +215,86 @@ export default function EditarConsulta() {
                         <SelectItem value="agendada">Agendada</SelectItem>
                         <SelectItem value="realizada">Realizada</SelectItem>
                         <SelectItem value="cancelada">Cancelada</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid gap-6 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="especialidade"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">Especialidade</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-especialidade">
+                            <SelectValue placeholder="Selecione a especialidade" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Psicologia Clínica">Psicologia Clínica</SelectItem>
+                          <SelectItem value="Psicologia Organizacional">Psicologia Organizacional</SelectItem>
+                          <SelectItem value="Terapia Cognitivo-Comportamental">Terapia Cognitivo-Comportamental</SelectItem>
+                          <SelectItem value="Psicanálise">Psicanálise</SelectItem>
+                          <SelectItem value="Orientação Vocacional">Orientação Vocacional</SelectItem>
+                          <SelectItem value="Avaliação Psicológica">Avaliação Psicológica</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="compareceu"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">Comparecimento</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-compareceu">
+                            <SelectValue placeholder="Paciente compareceu?" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="pendente">Pendente</SelectItem>
+                          <SelectItem value="sim">Sim</SelectItem>
+                          <SelectItem value="nao">Não</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="motivo"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium">Motivo da Consulta</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-motivo">
+                          <SelectValue placeholder="Selecione o motivo" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Ansiedade">Ansiedade</SelectItem>
+                        <SelectItem value="Depressão">Depressão</SelectItem>
+                        <SelectItem value="Estresse no Trabalho">Estresse no Trabalho</SelectItem>
+                        <SelectItem value="Relacionamentos">Relacionamentos</SelectItem>
+                        <SelectItem value="Autoestima">Autoestima</SelectItem>
+                        <SelectItem value="Luto">Luto</SelectItem>
+                        <SelectItem value="Transtornos de Ansiedade">Transtornos de Ansiedade</SelectItem>
+                        <SelectItem value="Desenvolvimento Pessoal">Desenvolvimento Pessoal</SelectItem>
+                        <SelectItem value="Outro">Outro</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
