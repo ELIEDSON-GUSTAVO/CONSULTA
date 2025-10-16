@@ -81,12 +81,31 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createPaciente(insertPaciente: InsertPaciente): Promise<Paciente> {
-    const codigoProntuario = await this.generateCodigoProntuario();
-    const [paciente] = await db
-      .insert(pacientes)
-      .values({ ...insertPaciente, codigoProntuario })
-      .returning();
-    return paciente;
+    // Retry logic para evitar conflitos de código de prontuário
+    let attempts = 0;
+    const maxAttempts = 5;
+    
+    while (attempts < maxAttempts) {
+      try {
+        const codigoProntuario = await this.generateCodigoProntuario();
+        const [paciente] = await db
+          .insert(pacientes)
+          .values({ ...insertPaciente, codigoProntuario })
+          .returning();
+        return paciente;
+      } catch (error: any) {
+        // Se for erro de constraint de unicidade, tentar novamente
+        if (error?.code === '23505' && attempts < maxAttempts - 1) {
+          attempts++;
+          // Esperar um pouco antes de tentar novamente
+          await new Promise(resolve => setTimeout(resolve, 100 * attempts));
+          continue;
+        }
+        throw error;
+      }
+    }
+    
+    throw new Error('Não foi possível criar paciente após múltiplas tentativas');
   }
 
   async updatePaciente(id: string, updatePaciente: UpdatePaciente): Promise<Paciente | undefined> {

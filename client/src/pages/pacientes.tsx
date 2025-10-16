@@ -3,7 +3,8 @@ import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Users, Search, Plus, FileText } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Users, Search, Plus, FileText, ChevronDown, ChevronUp, Mail, Phone, User, Briefcase } from "lucide-react";
 import { type Paciente } from "@shared/schema";
 import { useState } from "react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -11,6 +12,19 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 export default function Pacientes() {
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
+
+  const toggleCard = (id: string) => {
+    setExpandedCards(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
 
   const { data: pacientes = [], isLoading } = useQuery<Paciente[]>({
     queryKey: ["/api/pacientes", searchQuery],
@@ -59,26 +73,81 @@ export default function Pacientes() {
       </Card>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {pacientes.map((paciente) => (
-          <Card key={paciente.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setLocation(`/pacientes/${paciente.id}`)}>
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle className="text-lg">{paciente.nome}</CardTitle>
-                  <CardDescription className="mt-1 font-mono text-sm">
-                    {paciente.codigoProntuario}
-                  </CardDescription>
+        {pacientes.map((paciente) => {
+          const isExpanded = expandedCards.has(paciente.id);
+          return (
+            <Card key={paciente.id} className="hover:shadow-md transition-shadow">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <CardTitle className="text-lg">{paciente.nome}</CardTitle>
+                    <CardDescription className="mt-1 font-mono text-sm">
+                      {paciente.codigoProntuario}
+                    </CardDescription>
+                  </div>
+                  <FileText className="h-5 w-5 text-muted-foreground" />
                 </div>
-                <FileText className="h-5 w-5 text-muted-foreground" />
-              </div>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground">
-              {paciente.setor && <p>Setor: {paciente.setor}</p>}
-              {paciente.email && <p className="truncate">{paciente.email}</p>}
-              {paciente.telefone && <p>{paciente.telefone}</p>}
-            </CardContent>
-          </Card>
-        ))}
+              </CardHeader>
+              <CardContent>
+                <Collapsible open={isExpanded} onOpenChange={() => toggleCard(paciente.id)}>
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full justify-between mb-2"
+                      data-testid={`button-toggle-${paciente.id}`}
+                    >
+                      <span className="text-sm">Ver detalhes</span>
+                      {isExpanded ? (
+                        <ChevronUp className="h-4 w-4" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </CollapsibleTrigger>
+                  
+                  <CollapsibleContent className="space-y-2 pt-2">
+                    {paciente.genero && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <User className="h-4 w-4" />
+                        <span className="capitalize">{paciente.genero}</span>
+                      </div>
+                    )}
+                    {paciente.setor && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Briefcase className="h-4 w-4" />
+                        <span>{paciente.setor}</span>
+                      </div>
+                    )}
+                    {paciente.email && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Mail className="h-4 w-4" />
+                        <span className="truncate">{paciente.email}</span>
+                      </div>
+                    )}
+                    {paciente.telefone && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Phone className="h-4 w-4" />
+                        <span>{paciente.telefone}</span>
+                      </div>
+                    )}
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full mt-3"
+                      onClick={() => setLocation(`/pacientes/${paciente.id}`)}
+                      data-testid={`button-view-profile-${paciente.id}`}
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      Ver Prontuário Completo
+                    </Button>
+                  </CollapsibleContent>
+                </Collapsible>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {pacientes.length === 0 && (
