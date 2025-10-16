@@ -27,6 +27,8 @@ export const solicitacoes = pgTable("solicitacoes", {
   descricao: text("descricao").notNull(),
   dataPreferencial: date("data_preferencial"),
   horarioPreferencial: text("horario_preferencial"),
+  email: text("email"),
+  telefone: text("telefone"),
   status: text("status").notNull().default("pendente"),
   consultaId: varchar("consulta_id"),
   observacoesPsicologo: text("observacoes_psicologo"),
@@ -68,6 +70,8 @@ export const insertSolicitacaoSchema = createInsertSchema(solicitacoes).omit({
   descricao: z.string().min(10, "Descrição deve ter pelo menos 10 caracteres"),
   dataPreferencial: z.string().optional(),
   horarioPreferencial: z.string().optional(),
+  email: z.string().email("Email inválido").optional().or(z.literal("")),
+  telefone: z.string().optional(),
   status: z.enum(["pendente", "aprovada", "rejeitada"]).default("pendente"),
 });
 

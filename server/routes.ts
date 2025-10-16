@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertConsultaSchema, updateConsultaSchema, insertSolicitacaoSchema, updateSolicitacaoSchema } from "@shared/schema";
+import { sendConfirmationEmail } from "./email";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // GET all consultas
@@ -124,6 +125,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!solicitacao) {
         return res.status(404).json({ error: "Solicitacao not found" });
       }
+
+      // Se a solicitação foi aprovada e tem email, enviar confirmação
+      if (validated.status === "aprovada" && solicitacao.email && validated.consultaId) {
+        const consulta = await storage.getConsulta(validated.consultaId);
+        if (consulta) {
+          await sendConfirmationEmail({
+            to: solicitacao.email,
+            funcionarioNome: solicitacao.nomeFuncionario,
+            data: consulta.data,
+            horario: consulta.horario,
+          });
+        }
+      }
+
       res.json(solicitacao);
     } catch (error) {
       console.error("Error updating solicitacao:", error);

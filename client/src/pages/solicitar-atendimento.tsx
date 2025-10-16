@@ -40,6 +40,8 @@ export default function SolicitarAtendimento() {
       descricao: "",
       dataPreferencial: "",
       horarioPreferencial: "",
+      email: "",
+      telefone: "",
       status: "pendente",
     },
   });
@@ -248,6 +250,52 @@ export default function SolicitarAtendimento() {
                       </Select>
                       <FormDescription>
                         Sugestão de período para o atendimento
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid gap-6 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">Email (Opcional)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="email"
+                          placeholder="seu.email@exemplo.com"
+                          {...field}
+                          data-testid="input-email"
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Receba confirmação quando sua consulta for aprovada
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="telefone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">Telefone (Opcional)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="tel"
+                          placeholder="(00) 00000-0000"
+                          {...field}
+                          data-testid="input-telefone"
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Número para contato
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
