@@ -11,6 +11,7 @@ export const pacientes = pgTable("pacientes", {
   telefone: text("telefone"),
   email: text("email"),
   setor: text("setor"),
+  observacoes: text("observacoes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -57,6 +58,7 @@ export const insertPacienteSchema = createInsertSchema(pacientes).omit({
   telefone: z.string().optional(),
   email: z.string().email("Email inválido").optional().or(z.literal("")),
   setor: z.string().optional(),
+  observacoes: z.string().optional(),
 });
 
 export const updatePacienteSchema = insertPacienteSchema.partial();
