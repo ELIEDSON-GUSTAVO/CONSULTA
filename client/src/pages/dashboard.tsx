@@ -8,6 +8,13 @@ import { Calendar, Users, Clock, Pencil, Trash2, Search, Plus, User, UserRound }
 import { type Consulta } from "@shared/schema";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
+
+const GENDER_COLORS = {
+  'Masculino': '#3b82f6',
+  'Feminino': '#ec4899',
+  'Outro': '#8b5cf6'
+};
 import {
   AlertDialog,
   AlertDialogAction,
@@ -153,6 +160,80 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xl font-semibold">Distribuição por Gênero</CardTitle>
+          <CardDescription>Visualização da distribuição de pacientes por gênero</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {(generoMasculino + generoFeminino + generoOutro) > 0 ? (
+            <div className="grid gap-6 md:grid-cols-2">
+              <ResponsiveContainer width="100%" height={250}>
+                <PieChart>
+                  <Pie
+                    data={[
+                      { name: 'Masculino', value: generoMasculino },
+                      { name: 'Feminino', value: generoFeminino },
+                      { name: 'Outro', value: generoOutro }
+                    ].filter(item => item.value > 0)}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {[
+                      { name: 'Masculino', value: generoMasculino },
+                      { name: 'Feminino', value: generoFeminino },
+                      { name: 'Outro', value: generoOutro }
+                    ].filter(item => item.value > 0).map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={GENDER_COLORS[entry.name as keyof typeof GENDER_COLORS]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              
+              <div className="flex flex-col justify-center space-y-3">
+                {generoMasculino > 0 && (
+                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="w-4 h-4 rounded-full" style={{ backgroundColor: GENDER_COLORS.Masculino }} />
+                      <span className="font-medium">Masculino</span>
+                    </div>
+                    <div className="text-2xl font-bold text-primary">{generoMasculino}</div>
+                  </div>
+                )}
+                {generoFeminino > 0 && (
+                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="w-4 h-4 rounded-full" style={{ backgroundColor: GENDER_COLORS.Feminino }} />
+                      <span className="font-medium">Feminino</span>
+                    </div>
+                    <div className="text-2xl font-bold text-primary">{generoFeminino}</div>
+                  </div>
+                )}
+                {generoOutro > 0 && (
+                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="w-4 h-4 rounded-full" style={{ backgroundColor: GENDER_COLORS.Outro }} />
+                      <span className="font-medium">Outro</span>
+                    </div>
+                    <div className="text-2xl font-bold text-primary">{generoOutro}</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <p className="text-center text-muted-foreground py-12">Sem dados disponíveis</p>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

@@ -1,8 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { type Consulta } from "@shared/schema";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend, Area, AreaChart, ComposedChart } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend, Area, AreaChart, ComposedChart, PieChart, Pie, Cell } from "recharts";
 import { Calendar, Users, CheckCircle, XCircle, Clock, TrendingUp, TrendingDown } from "lucide-react";
+
+const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
+const PERIOD_COLORS = {
+  'Manhã': 'hsl(var(--chart-2))',
+  'Tarde': 'hsl(var(--chart-3))',
+  'Noite': 'hsl(var(--chart-4))'
+};
+const GENDER_COLORS = {
+  'masculino': '#3b82f6',
+  'feminino': '#ec4899',
+  'outro': '#8b5cf6'
+};
 
 export default function Relatorios() {
   const { data: consultas = [], isLoading } = useQuery<Consulta[]>({
@@ -220,29 +232,47 @@ export default function Relatorios() {
           </CardHeader>
           <CardContent>
             {periodoData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={periodoData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                  <XAxis dataKey="name" className="text-xs" />
-                  <YAxis className="text-xs" />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}
-                    labelStyle={{ color: "hsl(var(--foreground))" }}
-                  />
-                  <Bar dataKey="total" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              <>
+                <ResponsiveContainer width="100%" height={250}>
+                  <PieChart>
+                    <Pie
+                      data={periodoData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percentual }) => `${name}: ${percentual}%`}
+                      outerRadius={80}
+                      fill="hsl(var(--primary))"
+                      dataKey="total"
+                    >
+                      {periodoData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={PERIOD_COLORS[entry.name as keyof typeof PERIOD_COLORS] || COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }}
+                      labelStyle={{ color: "hsl(var(--foreground))" }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="mt-4 space-y-2">
+                  {periodoData.map((item, index) => (
+                    <div key={item.name} className="flex justify-between text-sm items-center">
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: PERIOD_COLORS[item.name as keyof typeof PERIOD_COLORS] || COLORS[index % COLORS.length] }}
+                        />
+                        <span>{item.name}</span>
+                      </div>
+                      <span className="font-medium">{item.total} ({item.percentual}%)</span>
+                    </div>
+                  ))}
+                </div>
+              </>
             ) : (
               <p className="text-center text-muted-foreground py-12">Sem dados disponíveis</p>
             )}
-            <div className="mt-4 space-y-2">
-              {periodoData.map((item) => (
-                <div key={item.name} className="flex justify-between text-sm">
-                  <span>{item.name}</span>
-                  <span className="font-medium">{item.total} ({item.percentual}%)</span>
-                </div>
-              ))}
-            </div>
           </CardContent>
         </Card>
 
@@ -285,18 +315,47 @@ export default function Relatorios() {
         </CardHeader>
         <CardContent>
           {motivoData.length > 0 ? (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {motivoData.map((item) => (
-                <div key={item.name} className="p-4 border rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{item.name}</p>
-                      <p className="text-sm text-muted-foreground">{item.percentual}% do total</p>
+            <div className="grid gap-6 md:grid-cols-2">
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={motivoData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percentual }) => `${percentual}%`}
+                    outerRadius={100}
+                    fill="hsl(var(--primary))"
+                    dataKey="total"
+                  >
+                    {motivoData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }}
+                    labelStyle={{ color: "hsl(var(--foreground))" }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              
+              <div className="flex flex-col justify-center space-y-2">
+                {motivoData.map((item, index) => (
+                  <div key={item.name} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div 
+                        className="w-4 h-4 rounded-full flex-shrink-0" 
+                        style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                      />
+                      <div>
+                        <p className="font-medium text-sm">{item.name}</p>
+                        <p className="text-xs text-muted-foreground">{item.percentual}% do total</p>
+                      </div>
                     </div>
-                    <div className="text-2xl font-bold text-primary">{item.total}</div>
+                    <div className="text-lg font-bold text-primary">{item.total}</div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           ) : (
             <p className="text-center text-muted-foreground py-12">Sem dados disponíveis</p>
