@@ -64,7 +64,8 @@ export default function GerenciarSolicitacoes() {
           telefone: selectedSolicitacao?.telefone || undefined,
           email: selectedSolicitacao?.email || undefined,
         };
-        const novoPaciente = await apiRequest("POST", "/api/pacientes", novoPacienteData) as unknown as Paciente;
+        const response = await apiRequest("POST", "/api/pacientes", novoPacienteData);
+        const novoPaciente = await response.json() as Paciente;
         pacienteId = novoPaciente.id;
       }
 
