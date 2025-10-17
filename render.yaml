@@ -2,7 +2,7 @@ services:
   - type: web
     name: consulta-api
     env: node
-    buildCommand: npm install
+    buildCommand: npm ci && npm run build
     startCommand: npm run start
     envVars:
       - key: PORT
