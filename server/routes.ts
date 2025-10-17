@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { jwtMiddleware } from "./middleware/auth";
 import { insertConsultaSchema, updateConsultaSchema, insertSolicitacaoSchema, updateSolicitacaoSchema, insertPacienteSchema, updatePacienteSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -48,8 +49,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // POST create new paciente
-  app.post("/api/pacientes", async (req, res) => {
+  // POST create new paciente (protected)
+  app.post("/api/pacientes", jwtMiddleware, async (req, res) => {
     try {
       const validated = insertPacienteSchema.parse(req.body);
       const paciente = await storage.createPaciente(validated);
@@ -63,8 +64,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // PATCH update paciente
-  app.patch("/api/pacientes/:id", async (req, res) => {
+  // PATCH update paciente (protected)
+  app.patch("/api/pacientes/:id", jwtMiddleware, async (req, res) => {
     try {
       const validated = updatePacienteSchema.parse(req.body);
       const paciente = await storage.updatePaciente(req.params.id, validated);
@@ -81,8 +82,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // DELETE paciente
-  app.delete("/api/pacientes/:id", async (req, res) => {
+  // DELETE paciente (protected)
+  app.delete("/api/pacientes/:id", jwtMiddleware, async (req, res) => {
     try {
       const success = await storage.deletePaciente(req.params.id);
       if (!success) {
@@ -120,8 +121,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // POST create new consulta
-  app.post("/api/consultas", async (req, res) => {
+  // POST create new consulta (protected)
+  app.post("/api/consultas", jwtMiddleware, async (req, res) => {
     try {
       const validated = insertConsultaSchema.parse(req.body);
       const consulta = await storage.createConsulta(validated);
@@ -135,8 +136,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // PATCH update consulta
-  app.patch("/api/consultas/:id", async (req, res) => {
+  // PATCH update consulta (protected)
+  app.patch("/api/consultas/:id", jwtMiddleware, async (req, res) => {
     try {
       const validated = updateConsultaSchema.parse(req.body);
       const consulta = await storage.updateConsulta(req.params.id, validated);
@@ -153,8 +154,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // DELETE consulta
-  app.delete("/api/consultas/:id", async (req, res) => {
+  // DELETE consulta (protected)
+  app.delete("/api/consultas/:id", jwtMiddleware, async (req, res) => {
     try {
       const success = await storage.deleteConsulta(req.params.id);
       if (!success) {
@@ -206,8 +207,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // POST create new solicitacao
-  app.post("/api/solicitacoes", async (req, res) => {
+  // POST create new solicitacao (protected)
+  app.post("/api/solicitacoes", jwtMiddleware, async (req, res) => {
     try {
       const validated = insertSolicitacaoSchema.parse(req.body);
       const solicitacao = await storage.createSolicitacao(validated);
@@ -221,8 +222,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // PATCH update solicitacao (aprovar/rejeitar)
-  app.patch("/api/solicitacoes/:id", async (req, res) => {
+  // PATCH update solicitacao (aprovar/rejeitar) (protected)
+  app.patch("/api/solicitacoes/:id", jwtMiddleware, async (req, res) => {
     try {
       const validated = updateSolicitacaoSchema.parse(req.body);
       const solicitacao = await storage.updateSolicitacao(req.params.id, validated);
@@ -239,8 +240,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // DELETE solicitacao
-  app.delete("/api/solicitacoes/:id", async (req, res) => {
+  // DELETE solicitacao (protected)
+  app.delete("/api/solicitacoes/:id", jwtMiddleware, async (req, res) => {
     try {
       const success = await storage.deleteSolicitacao(req.params.id);
       if (!success) {
