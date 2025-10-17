@@ -25,7 +25,8 @@ jobs:
 
       - name: Build
         env:
-          VITE_BASE: '/'
+          VITE_BASE: '/CONSULTA/'
+          VITE_API_BASE_URL: ${{ secrets.API_URL }}
         run: npm run build
 
       - name: Deploy to gh-pages
