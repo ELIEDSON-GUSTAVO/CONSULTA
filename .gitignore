@@ -4,3 +4,13 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+/.local/
+.config/
+tmp_extracted_*.txt
+tmp_search_results.txt
+tmp_extracted_*.agent_state_*.bin.txt
+tmp_extracted_*.bin.txt
+tmp_extracted_*.txt
+tmp_extracted_*.repl_state.bin.txt
+rapid_build_success
+*.ps1
