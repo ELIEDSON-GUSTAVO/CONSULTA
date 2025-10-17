@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: consulta-api
+    env: node
+    buildCommand: npm install
+    startCommand: npm run start
+    envVars:
+      - key: PORT
+        value: 10000
+    region: ohio
