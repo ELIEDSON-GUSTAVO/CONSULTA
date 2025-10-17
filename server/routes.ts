@@ -1,10 +1,13 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import healthRouter from "./routes/health";
 import { jwtMiddleware } from "./middleware/auth";
 import { insertConsultaSchema, updateConsultaSchema, insertSolicitacaoSchema, updateSolicitacaoSchema, insertPacienteSchema, updatePacienteSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Health check route
+  app.use('/health', healthRouter);
   // GET all pacientes
   app.get("/api/pacientes", async (req, res) => {
     try {

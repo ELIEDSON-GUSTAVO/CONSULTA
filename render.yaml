@@ -8,3 +8,5 @@ services:
       - key: PORT
         value: 10000
     region: ohio
+    healthCheckPath: /health
+    autoDeploy: true
