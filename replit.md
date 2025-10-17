@@ -216,3 +216,15 @@ pacientes table:
   - **Frontend** (client/src/pages/dashboard.tsx): Added null-safe guards in search filter (line 66) and table display (line 304)
 - **Impact**: Dashboard now renders correctly even when patient data is missing, with fallback text "Paciente não encontrado"
 - **Note**: Current implementation uses N+1 queries (one per consultation) - performance optimization with SQL JOIN recommended for future improvement
+
+#### 3. Request Approval Error and Duplicate Patients (October 17)
+- **Issue**: When psychologist approved a request, system threw error and created duplicate patients on multiple clicks
+- **Cause**: `apiRequest()` returns a Response object, but code was trying to use it directly as Paciente object without calling `.json()`
+- **Root Cause**: Line 67 in `gerenciar-solicitacoes.tsx` used incorrect pattern: `await apiRequest(...) as unknown as Paciente`
+- **Fix Implemented** (client/src/pages/gerenciar-solicitacoes.tsx lines 70-72):
+  ```typescript
+  const response = await apiRequest("POST", "/api/pacientes", novoPacienteData);
+  const novoPaciente = await response.json() as Paciente;
+  ```
+- **Impact**: Approval workflow now works correctly, creating patient and consultation without errors
+- **Note**: Button already had `isPending` protection against multiple clicks (line 420), so duplication was a consequence of the error, not missing protection
