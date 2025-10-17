@@ -6,8 +6,14 @@ import { jwtMiddleware } from "./middleware/auth";
 import { insertConsultaSchema, updateConsultaSchema, insertSolicitacaoSchema, updateSolicitacaoSchema, insertPacienteSchema, updatePacienteSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Health check route
-  app.use('/health', healthRouter);
+  // Health check route - deve ser a primeira rota
+  app.get('/health', (req, res) => {
+    res.json({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      version: process.env.npm_package_version || '1.0.0'
+    });
+  });
   // GET all pacientes
   app.get("/api/pacientes", async (req, res) => {
     try {
