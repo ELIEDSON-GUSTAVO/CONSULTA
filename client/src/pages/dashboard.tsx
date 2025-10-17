@@ -60,7 +60,7 @@ export default function Dashboard() {
   });
 
   const filteredConsultas = consultas.filter((consulta) =>
-    consulta.paciente.toLowerCase().includes(searchTerm.toLowerCase())
+    (consulta.paciente || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const today = new Date().toISOString().split("T")[0];
@@ -298,7 +298,7 @@ export default function Dashboard() {
                       data-testid={`row-consulta-${consulta.id}`}
                     >
                       <td className="py-4 px-4 font-medium" data-testid={`text-paciente-${consulta.id}`}>
-                        {consulta.paciente}
+                        {consulta.paciente || "Paciente não encontrado"}
                       </td>
                       <td className="py-4 px-4 text-muted-foreground font-mono text-sm">
                         {format(new Date(consulta.data + "T00:00:00"), "dd/MM/yyyy", { locale: ptBR })}

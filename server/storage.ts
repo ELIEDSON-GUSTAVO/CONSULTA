@@ -156,7 +156,23 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getConsultas(): Promise<Consulta[]> {
-    return await db.select().from(consultas).orderBy(desc(consultas.createdAt));
+    // Buscar consultas com join de pacientes para preencher o nome
+    const consultasRaw = await db.select().from(consultas).orderBy(desc(consultas.createdAt));
+    
+    // Para cada consulta, buscar o nome do paciente se tiver pacienteId
+    const consultasComPaciente = await Promise.all(
+      consultasRaw.map(async (consulta) => {
+        if (consulta.pacienteId && !consulta.paciente) {
+          const paciente = await this.getPaciente(consulta.pacienteId);
+          if (paciente) {
+            return { ...consulta, paciente: paciente.nome, genero: paciente.genero, setor: paciente.setor };
+          }
+        }
+        return consulta;
+      })
+    );
+    
+    return consultasComPaciente;
   }
 
   async getConsultasByPaciente(pacienteId: string): Promise<Consulta[]> {
