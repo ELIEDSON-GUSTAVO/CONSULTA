@@ -7,6 +7,8 @@ services:
     envVars:
       - key: PORT
         value: 10000
+      - key: DATABASE_URL
+        sync: false # Isso indica que o valor deve ser configurado manualmente
     region: ohio
     healthCheckPath: /health
     autoDeploy: true
