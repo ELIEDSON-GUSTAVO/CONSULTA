@@ -199,8 +199,20 @@ pacientes table:
 - Responsive design with shadcn Tabs component for seamless mobile experience
 
 ### Critical Bug Fixes (October 2025)
-- **Null Gender Validation Fix**: Resolved white screen error in psychologist interface when approving requests
-  - Issue: Zod schema with `.optional()` expects `undefined` but database can return `null` for optional gender field
-  - Fix: Added null-to-undefined conversion in `gerenciar-solicitacoes.tsx` when creating consultations (lines 81-84)
-  - Ensures consistent handling: null values from database are converted to undefined before API submission
-  - Same pattern now applied to both patient creation and consultation creation for consistency
+
+#### 1. Null Gender Validation Fix (October 16)
+- **Issue**: White screen error in psychologist interface when approving requests
+- **Cause**: Zod schema with `.optional()` expects `undefined` but database can return `null` for optional gender field
+- **Fix**: Added null-to-undefined conversion in `gerenciar-solicitacoes.tsx` when creating consultations (lines 81-84)
+- **Impact**: Ensures consistent handling - null values from database are converted to undefined before API submission
+- **Coverage**: Same pattern applied to both patient creation and consultation creation for consistency
+
+#### 2. Dashboard White Screen Fix (October 17)
+- **Issue**: Psychologist dashboard showed white screen when accessing the system
+- **Cause**: Dashboard tried to access `consulta.paciente` field which could be null, causing TypeScript/runtime errors
+- **Root Cause**: System migrated to relationship model (pacienteId references) but field `paciente` (direct name) became optional
+- **Fix Implemented**:
+  - **Backend** (server/storage.ts lines 161-179): Modified `getConsultas()` to automatically populate patient name, gender, and sector from pacientes table when `pacienteId` exists
+  - **Frontend** (client/src/pages/dashboard.tsx): Added null-safe guards in search filter (line 66) and table display (line 304)
+- **Impact**: Dashboard now renders correctly even when patient data is missing, with fallback text "Paciente não encontrado"
+- **Note**: Current implementation uses N+1 queries (one per consultation) - performance optimization with SQL JOIN recommended for future improvement
